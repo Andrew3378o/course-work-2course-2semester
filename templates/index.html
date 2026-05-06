@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Welcome to the Wiki!</h2>
+    <p>Explore our latest articles:</p>
+
+    {% if articles %}
+        <ul>
+        {% for article in articles %}
+            <li>
+                <h3>{{ article.title }}</h3>
+                <p>{{ article.content[:100] }}...</p>
+                <hr>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p><em>No articles found in the database.</em></p>
+    {% endif %}
+
+{% endblock %}
