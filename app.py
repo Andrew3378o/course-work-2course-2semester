@@ -112,5 +112,24 @@ def edit_article(article_id):
         
     return render_template('edit_article.html', article=article)
 
+# NEW ROUTE: Delete an article
+@app.route('/article/<int:article_id>/delete', methods=['POST'])
+def delete_article(article_id):
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            # Delete the record from the database
+            cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
+            conn.commit()
+        except Exception as e:
+            print(f"Database error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            
+    # Redirect back to the home page after deletion
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     app.run(debug=True)
