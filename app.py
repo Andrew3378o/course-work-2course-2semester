@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, abort, request, redirect, url_for
 from dotenv import load_dotenv
 from db import get_db_connection
+import markdown2
 
 # Initialize environment and app
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -45,6 +46,11 @@ def article_detail(article_id):
     if article is None:
         abort(404)
         
+    article['html_content'] = markdown2.markdown(
+        article['content_markdown'], 
+        extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks']
+    )  
+    
     return render_template('article.html', article=article)
 
 @app.route('/article/new', methods=['GET', 'POST'])
