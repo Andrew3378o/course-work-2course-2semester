@@ -1,6 +1,6 @@
 # Virtual environments
 venv/
-env/
+env/Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # Python cache
 __pycache__/
