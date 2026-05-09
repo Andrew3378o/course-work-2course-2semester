@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ article.title }} - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Edit Article</h2>
+    
+    <form action="{{ url_for('edit_article', article_id=article.id) }}" method="POST">
+        <div style="margin-bottom: 1em;">
+            <label for="title">Title:</label><br>
+            <input type="text" id="title" name="title" value="{{ article.title }}" required style="width: 100%; max-width: 400px;">
+        </div>
+        <div style="margin-bottom: 1em;">
+            <label for="content_markdown">Content:</label><br>
+            <textarea id="content_markdown" name="content_markdown" rows="10" required style="width: 100%; max-width: 600px;">{{ article.content_markdown }}</textarea>
+        </div>
+        <button type="submit">Update Article</button>
+    </form>
+    
+    <p><a href="{{ url_for('article_detail', article_id=article.id) }}" style="text-decoration: none;">&larr; Cancel</a></p>
+{% endblock %}
