@@ -10,6 +10,18 @@
             <label for="title">Title:</label><br>
             <input type="text" id="title" name="title" required style="width: 100%; max-width: 400px;">
         </div>
+        
+        <div style="margin-bottom: 1em;">
+            <label for="category_id">Category:</label><br>
+            <select name="category_id" id="category_id" style="width: 100%; max-width: 400px; padding: 5px;">
+                <option value="">-- No Category --</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+            <a href="{{ url_for('create_category') }}" style="margin-left: 10px; font-size: 0.9em;">+ Add New Category</a>
+        </div>
+
         <div style="margin-bottom: 1em;">
             <label for="content">Content:</label><br>
             <textarea id="content" name="content_markdown" rows="10" required style="width: 100%; max-width: 600px;"></textarea>

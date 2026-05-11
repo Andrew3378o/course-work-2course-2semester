@@ -6,6 +6,8 @@
     <article>
         <h2>{{ article.title }}</h2>
         
+        <p style="color: #666; font-size: 0.9em; margin-top: -10px;">Category: {{ article.category_name or 'None' }}</p>
+        
         <div class="article-content" style="margin-bottom: 2em; line-height: 1.6;">
             {{ article.html_content | safe }}
         </div>

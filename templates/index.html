@@ -15,6 +15,7 @@
                         {{ article.title }}
                     </a>
                 </h3>
+                <p style="margin-top: -10px; margin-bottom: 5px;"><small>Category: {{ article.category_name or 'None' }}</small></p>
                 <p>{{ article.content_markdown[:100] }}...</p>
                 <hr>
             </li>

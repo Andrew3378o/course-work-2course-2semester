@@ -18,10 +18,16 @@ def index():
     if conn:
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT id, title, content_markdown FROM articles ORDER BY id DESC LIMIT 10")
+            query = """
+                SELECT a.id, a.title, a.content_markdown, c.id as category_id, c.name as category_name 
+                FROM articles a 
+                LEFT JOIN categories c ON a.category_id = c.id 
+                ORDER BY a.id DESC LIMIT 10
+            """
+            cursor.execute(query)
             articles = cursor.fetchall()
         except Exception as e:
-            print(f"Database error: {e}")
+            print(e)
         finally:
             cursor.close()
             conn.close()
@@ -34,10 +40,16 @@ def article_detail(article_id):
     if conn:
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
+            query = """
+                SELECT a.*, c.id as category_id, c.name as category_name 
+                FROM articles a 
+                LEFT JOIN categories c ON a.category_id = c.id 
+                WHERE a.id = %s
+            """
+            cursor.execute(query, (article_id,))
             article = cursor.fetchone()
         except Exception as e:
-            print(f"Database error: {e}")
+            print(e)
         finally:
             cursor.close()
             conn.close()
@@ -54,63 +66,69 @@ def article_detail(article_id):
 
 @app.route('/article/new', methods=['GET', 'POST'])
 def create_article():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
     if request.method == 'POST':
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')
+        category_id = request.form.get('category_id')
 
         if title and content_markdown:
-            conn = get_db_connection()
-            if conn:
-                cursor = conn.cursor()
-                try:
-                    cursor.execute("INSERT INTO articles (title, content_markdown) VALUES (%s, %s)", (title, content_markdown))
-                    conn.commit()
-                except Exception as e:
-                    print(f"Database error: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
+            try:
+                cursor.execute(
+                    "INSERT INTO articles (title, content_markdown, category_id) VALUES (%s, %s, %s)", 
+                    (title, content_markdown, category_id if category_id else None)
+                )
+                conn.commit()
+            except Exception as e:
+                print(e)
+            finally:
+                cursor.close()
+                conn.close()
             return redirect(url_for('index'))
             
-    return render_template('create_article.html')
+    cursor.execute("SELECT * FROM categories")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('create_article.html', categories=categories)
 
 @app.route('/article/<int:article_id>/edit', methods=['GET', 'POST'])
 def edit_article(article_id):
     conn = get_db_connection()
-    if not conn:
-        abort(500)
-        
     cursor = conn.cursor(dictionary=True)
     
     if request.method == 'POST':
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')
+        category_id = request.form.get('category_id')
         
         if title and content_markdown:
             try:
-                cursor.execute("UPDATE articles SET title = %s, content_markdown = %s WHERE id = %s", (title, content_markdown, article_id))
+                cursor.execute(
+                    "UPDATE articles SET title = %s, content_markdown = %s, category_id = %s WHERE id = %s", 
+                    (title, content_markdown, category_id if category_id else None, article_id)
+                )
                 conn.commit()
             except Exception as e:
-                print(f"Database error: {e}")
+                print(e)
             finally:
                 cursor.close()
                 conn.close()
             return redirect(url_for('article_detail', article_id=article_id))
             
-    try:
-        cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
-        article = cursor.fetchone()
-    except Exception as e:
-        print(f"Database error: {e}")
-        article = None
-    finally:
-        cursor.close()
-        conn.close()
-        
+    cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
+    article = cursor.fetchone()
+    cursor.execute("SELECT * FROM categories")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
     if article is None:
         abort(404)
         
-    return render_template('edit_article.html', article=article)
+    return render_template('edit_article.html', article=article, categories=categories)
 
 @app.route('/article/<int:article_id>/delete', methods=['POST'])
 def delete_article(article_id):
@@ -121,7 +139,7 @@ def delete_article(article_id):
             cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
             conn.commit()
         except Exception as e:
-            print(f"Database error: {e}")
+            print(e)
         finally:
             cursor.close()
             conn.close()
@@ -136,7 +154,13 @@ def search():
         cursor = conn.cursor(dictionary=True)
         try:
             search_term = f"%{query}%"
-            cursor.execute("SELECT id, title, content_markdown FROM articles WHERE title LIKE %s OR content_markdown LIKE %s ORDER BY id DESC", (search_term, search_term))
+            cursor.execute("""
+                SELECT a.id, a.title, a.content_markdown, c.id as category_id, c.name as category_name 
+                FROM articles a 
+                LEFT JOIN categories c ON a.category_id = c.id 
+                WHERE a.title LIKE %s OR a.content_markdown LIKE %s 
+                ORDER BY a.id DESC
+            """, (search_term, search_term))
             articles = cursor.fetchall()
         except Exception as e:
             print(e)
@@ -144,6 +168,25 @@ def search():
             cursor.close()
             conn.close()
     return render_template('search_results.html', articles=articles, query=query)
+
+@app.route('/category/new', methods=['GET', 'POST'])
+def create_category():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        if name:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("INSERT INTO categories (name) VALUES (%s)", (name,))
+                    conn.commit()
+                except Exception as e:
+                    print(e)
+                finally:
+                    cursor.close()
+                    conn.close()
+            return redirect(url_for('create_article'))
+    return render_template('create_category.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
