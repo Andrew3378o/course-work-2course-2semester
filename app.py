@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from db import get_db_connection
 import markdown2
 
-# Initialize environment and app
 basedir = os.path.abspath(os.path.dirname(__file__))
 env_path = os.path.join(basedir, '.env')
 load_dotenv(env_path, override=True)
@@ -75,7 +74,6 @@ def create_article():
             
     return render_template('create_article.html')
 
-# NEW ROUTE: Edit existing article
 @app.route('/article/<int:article_id>/edit', methods=['GET', 'POST'])
 def edit_article(article_id):
     conn = get_db_connection()
@@ -84,14 +82,12 @@ def edit_article(article_id):
         
     cursor = conn.cursor(dictionary=True)
     
-    # Handle form submission
     if request.method == 'POST':
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')
         
         if title and content_markdown:
             try:
-                # Update the database record
                 cursor.execute("UPDATE articles SET title = %s, content_markdown = %s WHERE id = %s", (title, content_markdown, article_id))
                 conn.commit()
             except Exception as e:
@@ -99,10 +95,8 @@ def edit_article(article_id):
             finally:
                 cursor.close()
                 conn.close()
-            # Redirect back to the updated article page
             return redirect(url_for('article_detail', article_id=article_id))
             
-    # Handle GET request: fetch current article to pre-fill the form
     try:
         cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
         article = cursor.fetchone()
@@ -118,14 +112,12 @@ def edit_article(article_id):
         
     return render_template('edit_article.html', article=article)
 
-# NEW ROUTE: Delete an article
 @app.route('/article/<int:article_id>/delete', methods=['POST'])
 def delete_article(article_id):
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
         try:
-            # Delete the record from the database
             cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
             conn.commit()
         except Exception as e:
@@ -133,9 +125,25 @@ def delete_article(article_id):
         finally:
             cursor.close()
             conn.close()
-            
-    # Redirect back to the home page after deletion
     return redirect(url_for('index'))
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    conn = get_db_connection()
+    articles = []
+    if conn and query:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            search_term = f"%{query}%"
+            cursor.execute("SELECT id, title, content_markdown FROM articles WHERE title LIKE %s OR content_markdown LIKE %s ORDER BY id DESC", (search_term, search_term))
+            articles = cursor.fetchall()
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+            conn.close()
+    return render_template('search_results.html', articles=articles, query=query)
 
 if __name__ == '__main__':
     app.run(debug=True)
