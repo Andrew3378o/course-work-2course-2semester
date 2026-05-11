@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Category - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Edit Category</h2>
+    
+    <form method="POST" style="margin-bottom: 2em;">
+        <div style="margin-bottom: 1em;">
+            <label for="name">Category Name:</label><br>
+            <input type="text" id="name" name="name" value="{{ category.name }}" required style="width: 100%; max-width: 400px;">
+        </div>
+        <button type="submit">Save Changes</button>
+    </form>
+    
+    <p><a href="{{ url_for('manage_categories') }}" style="text-decoration: none;">&larr; Cancel</a></p>
+{% endblock %}

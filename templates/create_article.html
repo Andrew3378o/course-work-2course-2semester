@@ -19,7 +19,7 @@
                     <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
             </select>
-            <a href="{{ url_for('create_category') }}" style="margin-left: 10px; font-size: 0.9em;">+ Add New Category</a>
+            <a href="{{ url_for('manage_categories') }}" style="margin-left: 10px; font-size: 0.9em;">+ Add/Manage Categories</a>
         </div>
 
         <div style="margin-bottom: 1em;">
