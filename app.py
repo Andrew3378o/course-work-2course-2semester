@@ -1,9 +1,11 @@
 import os
 import re
-from flask import Flask, render_template, abort, request, redirect, url_for, flash
+from flask import Flask, render_template, abort, request, redirect, url_for, flash, session
 from dotenv import load_dotenv
 from db import get_db_connection
 import markdown2
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 env_path = os.path.join(basedir, '.env')
@@ -11,6 +13,82 @@ load_dotenv(env_path, override=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'default-secret-key')
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username and password:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor(dictionary=True)
+                try:
+                    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+                    if cursor.fetchone():
+                        flash('Username already exists.', 'error')
+                    else:
+                        hashed_password = generate_password_hash(password)
+                        cursor.execute(
+                            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
+                            (username, hashed_password, 'Editor')
+                        )
+                        conn.commit()
+                        flash('Registration successful! Please log in.', 'success')
+                        return redirect(url_for('login'))
+                except Exception as e:
+                    print(e)
+                    flash('Database error.', 'error')
+                finally:
+                    cursor.close()
+                    conn.close()
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username and password:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor(dictionary=True)
+                try:
+                    cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+                    user = cursor.fetchone()
+                    
+                    if user and check_password_hash(user['password_hash'], password):
+                        session['user_id'] = user['id']
+                        session['username'] = user['username']
+                        session['role'] = user.get('role', '')
+                        flash(f'Welcome back, {user["username"]}!', 'success')
+                        return redirect(url_for('index'))
+                    else:
+                        flash('Invalid username or password.', 'error')
+                except Exception as e:
+                    print(e)
+                    flash('Database error.', 'error')
+                finally:
+                    cursor.close()
+                    conn.close()
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('index'))
 
 @app.route('/')
 def index():
@@ -69,12 +147,10 @@ def article_detail(article_id):
     if article is None:
         abort(404)
         
-    # Заміна [[Назва статті]] на HTML-посилання
     raw_content = article['content_markdown']
     wiki_link_pattern = r'\[\[(.*?)\]\]'
     processed_content = re.sub(wiki_link_pattern, r'<a href="/wiki/\1" class="wiki-link">\1</a>', raw_content)
 
-    # Конвертація Markdown із підтримкою змісту (toc)
     md = markdown2.Markdown(extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks', 'toc'])
     html_result = md.convert(processed_content)
     
@@ -94,8 +170,12 @@ def wiki_link(title):
             if article:
                 return redirect(url_for('article_detail', article_id=article['id']))
             else:
-                flash(f'Стаття "{title}" ще не існує. Ви можете створити її першим!', 'info')
-                return redirect(url_for('create_article', prefill_title=title))
+                if 'user_id' in session:
+                    flash(f'Стаття "{title}" ще не існує. Ви можете створити її першим!', 'info')
+                    return redirect(url_for('create_article', prefill_title=title))
+                else:
+                    flash(f'Стаття "{title}" не існує. Увійдіть, щоб створити її.', 'info')
+                    return redirect(url_for('login'))
         except Exception as e:
             print(e)
         finally:
@@ -104,6 +184,7 @@ def wiki_link(title):
     return redirect(url_for('index'))
 
 @app.route('/article/new', methods=['GET', 'POST'])
+@login_required
 def create_article():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -138,6 +219,7 @@ def create_article():
     return render_template('create_article.html', categories=categories, prefill_title=prefill_title)
 
 @app.route('/article/<int:article_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_article(article_id):
     conn = get_db_connection()
     if not conn:
@@ -183,6 +265,7 @@ def edit_article(article_id):
     return render_template('edit_article.html', article=article, categories=categories)
 
 @app.route('/article/<int:article_id>/delete', methods=['POST'])
+@login_required
 def delete_article(article_id):
     conn = get_db_connection()
     if conn:
@@ -223,6 +306,7 @@ def search():
     return render_template('search_results.html', articles=articles, query=query)
 
 @app.route('/categories', methods=['GET', 'POST'])
+@login_required
 def manage_categories():
     conn = get_db_connection()
     error = None
@@ -253,6 +337,7 @@ def manage_categories():
     return render_template('manage_categories.html', categories=categories, error=error)
 
 @app.route('/categories/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_category(id):
     conn = get_db_connection()
     if request.method == 'POST':
@@ -285,6 +370,7 @@ def edit_category(id):
     return render_template('edit_category.html', category=category)
 
 @app.route('/categories/<int:id>/delete', methods=['POST'])
+@login_required
 def delete_category(id):
     conn = get_db_connection()
     if conn:
@@ -299,6 +385,14 @@ def delete_category(id):
             cursor.close()
             conn.close()
     return redirect(url_for('manage_categories'))
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

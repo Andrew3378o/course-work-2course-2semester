@@ -9,8 +9,14 @@
     <div class="container">
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('create_article') }}">New Article</a>
-            <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('create_article') }}">New Article</a>
+                <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
+                <a href="{{ url_for('logout') }}" style="color: #d9534f; float: right; margin-right: 0;">Logout ({{ session.get('username') }})</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
+            {% endif %}
             <form action="{{ url_for('search') }}" method="GET">
                 <input type="text" name="q" placeholder="Search..." required>
                 <button type="submit">Go</button>
