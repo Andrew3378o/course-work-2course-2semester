@@ -10,7 +10,7 @@
             <label for="title">Title:</label><br>
             <input type="text" id="title" name="title" value="{{ article.title }}" required style="width: 100%; max-width: 400px;">
         </div>
-        
+
         <div style="margin-bottom: 1em;">
             <label for="category_id">Category:</label><br>
             <select name="category_id" id="category_id" style="width: 100%; max-width: 400px; padding: 5px;">
@@ -23,8 +23,14 @@
         </div>
 
         <div style="margin-bottom: 1em;">
+            <label for="tags">Tags (comma-separated):</label><br>
+            <input type="text" id="tags" name="tags" value="{{ tags_string }}" style="width: 100%; max-width: 400px;">
+        </div>
+
+        <div style="margin-bottom: 1em;">
             <label for="content_markdown">Content:</label><br>
             <textarea id="content_markdown" name="content_markdown" rows="10" required style="width: 100%; max-width: 600px;">{{ article.content_markdown }}</textarea>
+            <p><small>Tip: You can link to other articles using <code>[[Article Name]]</code>.</small></p>
         </div>
         <button type="submit">Update Article</button>
     </form>

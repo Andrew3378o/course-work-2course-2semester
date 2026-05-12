@@ -47,7 +47,6 @@ def register():
                         flash('Registration successful! Please log in.', 'success')
                         return redirect(url_for('login'))
                 except Exception as e:
-                    print(e)
                     flash('Database error.', 'error')
                 finally:
                     cursor.close()
@@ -77,7 +76,6 @@ def login():
                     else:
                         flash('Invalid username or password.', 'error')
                 except Exception as e:
-                    print(e)
                     flash('Database error.', 'error')
                 finally:
                     cursor.close()
@@ -117,7 +115,7 @@ def index():
             cursor.execute(query, (per_page, offset))
             articles = cursor.fetchall()
         except Exception as e:
-            print(f"Database error: {e}")
+            pass
         finally:
             cursor.close()
             conn.close()
@@ -138,8 +136,18 @@ def article_detail(article_id):
                 WHERE a.id = %s
             """, (article_id,))
             article = cursor.fetchone()
+
+            if article:
+                cursor.execute("""
+                    SELECT t.name 
+                    FROM tags t 
+                    JOIN article_tags at ON t.id = at.tag_id 
+                    WHERE at.article_id = %s
+                """, (article_id,))
+                article['tags'] = [row['name'] for row in cursor.fetchall()]
+
         except Exception as e:
-            print(f"Database error: {e}")
+            pass
         finally:
             cursor.close()
             conn.close()
@@ -177,7 +185,7 @@ def wiki_link(title):
                     flash(f'Стаття "{title}" не існує. Увійдіть, щоб створити її.', 'info')
                     return redirect(url_for('login'))
         except Exception as e:
-            print(e)
+            pass
         finally:
             cursor.close()
             conn.close()
@@ -193,6 +201,7 @@ def create_article():
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')
         category_id = request.form.get('category_id')
+        tags_string = request.form.get('tags', '')
 
         if title and content_markdown:
             if conn:
@@ -201,6 +210,20 @@ def create_article():
                         "INSERT INTO articles (title, content_markdown, category_id) VALUES (%s, %s, %s)", 
                         (title, content_markdown, category_id if category_id else None)
                     )
+                    article_id = cursor.lastrowid
+
+                    if tags_string:
+                        tag_names = [t.strip() for t in tags_string.split(',') if t.strip()]
+                        for t_name in tag_names:
+                            cursor.execute("SELECT id FROM tags WHERE name = %s", (t_name,))
+                            tag = cursor.fetchone()
+                            if not tag:
+                                cursor.execute("INSERT INTO tags (name) VALUES (%s)", (t_name,))
+                                tag_id = cursor.lastrowid
+                            else:
+                                tag_id = tag['id']
+                            cursor.execute("INSERT INTO article_tags (article_id, tag_id) VALUES (%s, %s)", (article_id, tag_id))
+
                     conn.commit()
                     flash('Article published successfully!', 'success')
                 except Exception as e:
@@ -231,6 +254,7 @@ def edit_article(article_id):
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')
         category_id = request.form.get('category_id')
+        tags_string = request.form.get('tags', '')
         
         if title and content_markdown:
             try:
@@ -247,6 +271,20 @@ def edit_article(article_id):
                     "UPDATE articles SET title = %s, content_markdown = %s, category_id = %s WHERE id = %s", 
                     (title, content_markdown, category_id if category_id else None, article_id)
                 )
+
+                cursor.execute("DELETE FROM article_tags WHERE article_id = %s", (article_id,))
+                if tags_string:
+                    tag_names = [t.strip() for t in tags_string.split(',') if t.strip()]
+                    for t_name in tag_names:
+                        cursor.execute("SELECT id FROM tags WHERE name = %s", (t_name,))
+                        tag = cursor.fetchone()
+                        if not tag:
+                            cursor.execute("INSERT INTO tags (name) VALUES (%s)", (t_name,))
+                            tag_id = cursor.lastrowid
+                        else:
+                            tag_id = tag['id']
+                        cursor.execute("INSERT INTO article_tags (article_id, tag_id) VALUES (%s, %s)", (article_id, tag_id))
+
                 conn.commit()
                 flash('Article updated successfully!', 'success')
             except Exception as e:
@@ -259,11 +297,23 @@ def edit_article(article_id):
     try:
         cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
         article = cursor.fetchone()
+        
         cursor.execute("SELECT * FROM categories ORDER BY name ASC")
         categories = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT t.name 
+            FROM tags t 
+            JOIN article_tags at ON t.id = at.tag_id 
+            WHERE at.article_id = %s
+        """, (article_id,))
+        current_tags = cursor.fetchall()
+        tags_string = ", ".join([t['name'] for t in current_tags])
+
     except Exception as e:
         article = None
         categories = []
+        tags_string = ""
     finally:
         cursor.close()
         conn.close()
@@ -271,7 +321,31 @@ def edit_article(article_id):
     if article is None:
         abort(404)
         
-    return render_template('edit_article.html', article=article, categories=categories)
+    return render_template('edit_article.html', article=article, categories=categories, tags_string=tags_string)
+
+@app.route('/tag/<tag_name>')
+def tag_articles(tag_name):
+    conn = get_db_connection()
+    articles = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT a.id, a.title, a.content_markdown, c.name as category_name 
+                FROM articles a 
+                JOIN article_tags at ON a.id = at.article_id
+                JOIN tags t ON at.tag_id = t.id
+                LEFT JOIN categories c ON a.category_id = c.id 
+                WHERE t.name = %s
+                ORDER BY a.id DESC
+            """, (tag_name,))
+            articles = cursor.fetchall()
+        except Exception as e:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
+    return render_template('tag_articles.html', articles=articles, tag_name=tag_name)
 
 @app.route('/article/<int:article_id>/history')
 def article_history(article_id):
@@ -282,7 +356,7 @@ def article_history(article_id):
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT id, title FROM articles WHERE id = %s", (article_id,))
-            article = cursor.fetchone()
+            article = article = cursor.fetchone()
             
             if article:
                 cursor.execute("""
@@ -294,7 +368,7 @@ def article_history(article_id):
                 """, (article_id,))
                 revisions = cursor.fetchall()
         except Exception as e:
-            print(f"Database error: {e}")
+            pass
         finally:
             cursor.close()
             conn.close()
@@ -331,15 +405,19 @@ def search():
         try:
             search_term = f"%{query}%"
             cursor.execute("""
-                SELECT a.id, a.title, a.content_markdown, c.name as category_name 
+                SELECT DISTINCT a.id, a.title, a.content_markdown, c.name as category_name 
                 FROM articles a 
                 LEFT JOIN categories c ON a.category_id = c.id 
-                WHERE a.title LIKE %s OR a.content_markdown LIKE %s 
+                LEFT JOIN article_tags at ON a.id = at.article_id
+                LEFT JOIN tags t ON at.tag_id = t.id
+                WHERE a.title LIKE %s 
+                   OR a.content_markdown LIKE %s 
+                   OR t.name LIKE %s
                 ORDER BY a.id DESC
-            """, (search_term, search_term))
+            """, (search_term, search_term, search_term))
             articles = cursor.fetchall()
         except Exception as e:
-            print(e)
+            pass
         finally:
             cursor.close()
             conn.close()

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Tag: {{ tag_name }} - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Articles tagged with "{{ tag_name }}"</h2>
+    
+    {% if articles %}
+        <ul>
+        {% for article in articles %}
+            <li>
+                <h3>
+                    <a href="{{ url_for('article_detail', article_id=article.id) }}">
+                        {{ article.title }}
+                    </a>
+                </h3>
+                <p style="margin-top: -10px; margin-bottom: 5px;"><small>Category: {{ article.category_name or 'None' }}</small></p>
+                <p>{{ article.content_markdown[:100] }}...</p>
+                <hr>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p><em>No articles found for this tag.</em></p>
+    {% endif %}
+    
+    <a href="{{ url_for('index') }}" style="text-decoration: none;">&larr; Back to home</a>
+{% endblock %}
