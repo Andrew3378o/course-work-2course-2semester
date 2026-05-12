@@ -234,6 +234,15 @@ def edit_article(article_id):
         
         if title and content_markdown:
             try:
+                cursor.execute("SELECT content_markdown FROM articles WHERE id = %s", (article_id,))
+                old_data = cursor.fetchone()
+                
+                if old_data and old_data['content_markdown'] != content_markdown:
+                    cursor.execute(
+                        "INSERT INTO revisions (article_id, author_id, old_content) VALUES (%s, %s, %s)",
+                        (article_id, session.get('user_id'), old_data['content_markdown'])
+                    )
+
                 cursor.execute(
                     "UPDATE articles SET title = %s, content_markdown = %s, category_id = %s WHERE id = %s", 
                     (title, content_markdown, category_id if category_id else None, article_id)
@@ -263,6 +272,37 @@ def edit_article(article_id):
         abort(404)
         
     return render_template('edit_article.html', article=article, categories=categories)
+
+@app.route('/article/<int:article_id>/history')
+def article_history(article_id):
+    conn = get_db_connection()
+    revisions = []
+    article = None
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT id, title FROM articles WHERE id = %s", (article_id,))
+            article = cursor.fetchone()
+            
+            if article:
+                cursor.execute("""
+                    SELECT r.id, r.old_content, r.changed_at, u.username 
+                    FROM revisions r 
+                    LEFT JOIN users u ON r.author_id = u.id 
+                    WHERE r.article_id = %s 
+                    ORDER BY r.changed_at DESC
+                """, (article_id,))
+                revisions = cursor.fetchall()
+        except Exception as e:
+            print(f"Database error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            
+    if not article:
+        abort(404)
+        
+    return render_template('history.html', article=article, revisions=revisions)
 
 @app.route('/article/<int:article_id>/delete', methods=['POST'])
 @login_required
@@ -385,14 +425,6 @@ def delete_category(id):
             cursor.close()
             conn.close()
     return redirect(url_for('manage_categories'))
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('500.html'), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

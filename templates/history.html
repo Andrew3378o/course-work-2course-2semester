@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}History: {{ article.title }} - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Revision History for "{{ article.title }}"</h2>
+    
+    <p><a href="{{ url_for('article_detail', article_id=article.id) }}" style="text-decoration: none;">&larr; Back to article</a></p>
+    
+    {% if revisions %}
+        <ul style="list-style: none; padding: 0;">
+        {% for rev in revisions %}
+            <li style="border: 1px solid #e1e4e8; border-radius: 6px; padding: 15px; margin-bottom: 15px; background-color: #f6f8fa;">
+                <div style="margin-bottom: 10px;">
+                    <strong>{{ rev.username or 'Unknown user' }}</strong> edited this on <span style="color: #586069;">{{ rev.changed_at }}</span>
+                </div>
+                <details>
+                    <summary style="cursor: pointer; color: #0366d6; font-weight: bold;">View raw old content</summary>
+                    <pre style="background: #fff; border: 1px solid #d1d5da; padding: 10px; overflow-x: auto; margin-top: 10px; border-radius: 3px;">{{ rev.old_content }}</pre>
+                </details>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>This article has not been edited yet. No revisions available.</p>
+    {% endif %}
+{% endblock %}

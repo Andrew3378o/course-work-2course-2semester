@@ -23,6 +23,8 @@
         
         <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 2em;">
             <a href="{{ url_for('index') }}" style="text-decoration: none;">&larr; Back to home</a>
+            <span>|</span>
+            <a href="{{ url_for('article_history', article_id=article.id) }}">History</a>
             
             {% if session.get('user_id') %}
                 <span>|</span>
