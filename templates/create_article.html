@@ -8,9 +8,9 @@
     <form action="{{ url_for('create_article') }}" method="POST">
         <div style="margin-bottom: 1em;">
             <label for="title">Title:</label><br>
-            <input type="text" id="title" name="title" required style="width: 100%; max-width: 400px;">
+            <input type="text" id="title" name="title" value="{{ prefill_title }}" required style="width: 100%; max-width: 400px;">
         </div>
-        
+
         <div style="margin-bottom: 1em;">
             <label for="category_id">Category:</label><br>
             <select name="category_id" id="category_id" style="width: 100%; max-width: 400px; padding: 5px;">
@@ -25,6 +25,7 @@
         <div style="margin-bottom: 1em;">
             <label for="content">Content:</label><br>
             <textarea id="content" name="content_markdown" rows="10" required style="width: 100%; max-width: 600px;"></textarea>
+            <p><small>Tip: You can link to other articles using <code>[[Article Name]]</code>.</small></p>
         </div>
         <button type="submit">Publish</button>
     </form>

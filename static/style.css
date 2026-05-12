@@ -91,3 +91,36 @@ nav form button {
 .clear {
     clear: both;
 }
+
+/* Нові стилі для Wiki-функціоналу */
+.toc-box {
+    background-color: #f4f6f8;
+    border: 1px solid #dce0e4;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    display: inline-block;
+    min-width: 250px;
+}
+
+.toc-box h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.toc-box ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+a.wiki-link {
+    color: #0056b3;
+    font-weight: 500;
+    border-bottom: 1px dotted #0056b3;
+    text-decoration: none;
+}
+
+a.wiki-link:hover {
+    background-color: #eef5ff;
+}

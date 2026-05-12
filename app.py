@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, render_template, abort, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from db import get_db_connection
@@ -68,12 +69,39 @@ def article_detail(article_id):
     if article is None:
         abort(404)
         
-    article['html_content'] = markdown2.markdown(
-        article['content_markdown'], 
-        extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks']
-    )  
+    # Заміна [[Назва статті]] на HTML-посилання
+    raw_content = article['content_markdown']
+    wiki_link_pattern = r'\[\[(.*?)\]\]'
+    processed_content = re.sub(wiki_link_pattern, r'<a href="/wiki/\1" class="wiki-link">\1</a>', raw_content)
+
+    # Конвертація Markdown із підтримкою змісту (toc)
+    md = markdown2.Markdown(extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks', 'toc'])
+    html_result = md.convert(processed_content)
+    
+    article['html_content'] = html_result
+    article['toc'] = html_result.toc_html if hasattr(html_result, 'toc_html') and html_result.toc_html else None
     
     return render_template('article.html', article=article)
+
+@app.route('/wiki/<title>')
+def wiki_link(title):
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT id FROM articles WHERE title = %s", (title,))
+            article = cursor.fetchone()
+            if article:
+                return redirect(url_for('article_detail', article_id=article['id']))
+            else:
+                flash(f'Стаття "{title}" ще не існує. Ви можете створити її першим!', 'info')
+                return redirect(url_for('create_article', prefill_title=title))
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+            conn.close()
+    return redirect(url_for('index'))
 
 @app.route('/article/new', methods=['GET', 'POST'])
 def create_article():
@@ -105,7 +133,9 @@ def create_article():
     categories = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('create_article.html', categories=categories)
+    
+    prefill_title = request.args.get('prefill_title', '')
+    return render_template('create_article.html', categories=categories, prefill_title=prefill_title)
 
 @app.route('/article/<int:article_id>/edit', methods=['GET', 'POST'])
 def edit_article(article_id):
