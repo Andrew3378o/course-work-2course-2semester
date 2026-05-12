@@ -2,33 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Thematic Wiki{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1><a href="{{ url_for('index') }}">Thematic Wiki</a></h1>
-            <nav style="display: flex; align-items: center;">
-                <a href="{{ url_for('index') }}">Home</a>
-                <a href="{{ url_for('create_article') }}">Create Article</a>
-                <form action="{{ url_for('search') }}" method="GET" style="margin: 0 0 0 1.5rem; display: flex;">
-                    <input type="text" name="q" required style="padding: 5px; margin: 0; width: 150px;">
-                    <button type="submit" style="padding: 5px 10px; margin-left: 5px; font-size: 0.9rem;">Search</button>
-                </form>
-            </nav>
-        </header>
-        
-        <main>
-            {% block content %}
-            {% endblock %}
-        </main>
+        <nav>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('create_article') }}">New Article</a>
+            <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
+            <form action="{{ url_for('search') }}" method="GET">
+                <input type="text" name="q" placeholder="Search..." required>
+                <button type="submit">Go</button>
+            </form>
+            <div class="clear"></div>
+        </nav>
 
-        <footer>
-            <hr>
-            <p>&copy; 2026 Thematic Wiki Project</p>
-        </footer>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
     </div>
 </body>
 </html>

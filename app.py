@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, abort, request, redirect, url_for
+from flask import Flask, render_template, abort, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from db import get_db_connection
 import markdown2
@@ -93,8 +93,9 @@ def create_article():
                         (title, content_markdown, category_id if category_id else None)
                     )
                     conn.commit()
+                    flash('Article published successfully!', 'success')
                 except Exception as e:
-                    print(f"Database error: {e}")
+                    flash('Error publishing article.', 'error')
                 finally:
                     cursor.close()
                     conn.close()
@@ -126,8 +127,9 @@ def edit_article(article_id):
                     (title, content_markdown, category_id if category_id else None, article_id)
                 )
                 conn.commit()
+                flash('Article updated successfully!', 'success')
             except Exception as e:
-                print(f"Database error: {e}")
+                flash('Error updating article.', 'error')
             finally:
                 cursor.close()
                 conn.close()
@@ -139,7 +141,6 @@ def edit_article(article_id):
         cursor.execute("SELECT * FROM categories ORDER BY name ASC")
         categories = cursor.fetchall()
     except Exception as e:
-        print(f"Database error: {e}")
         article = None
         categories = []
     finally:
@@ -159,8 +160,9 @@ def delete_article(article_id):
         try:
             cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
             conn.commit()
+            flash('Article deleted.', 'info')
         except Exception as e:
-            print(f"Database error: {e}")
+            flash('Error deleting article.', 'error')
         finally:
             cursor.close()
             conn.close()
@@ -203,6 +205,7 @@ def manage_categories():
                 try:
                     cursor.execute("INSERT INTO categories (name) VALUES (%s)", (clean_name,))
                     conn.commit()
+                    flash('Category added successfully!', 'success')
                 except Exception:
                     error = "Така категорія вже існує."
                 finally:
@@ -231,9 +234,10 @@ def edit_category(id):
                 try:
                     cursor.execute("UPDATE categories SET name = %s WHERE id = %s", (clean_name, id))
                     conn.commit()
+                    flash('Category updated.', 'success')
                     return redirect(url_for('manage_categories'))
                 except Exception as e:
-                    print(e)
+                    flash('Error updating category.', 'error')
                 finally:
                     cursor.close()
                     conn.close()
@@ -258,8 +262,9 @@ def delete_category(id):
         try:
             cursor.execute("DELETE FROM categories WHERE id = %s", (id,))
             conn.commit()
+            flash('Category deleted.', 'info')
         except Exception as e:
-            print(f"Error: {e}")
+            flash('Error deleting category.', 'error')
         finally:
             cursor.close()
             conn.close()
