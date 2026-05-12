@@ -13,24 +13,37 @@ app.secret_key = os.environ.get('SECRET_KEY', 'default-secret-key')
 
 @app.route('/')
 def index():
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+    offset = (page - 1) * per_page
+    
     conn = get_db_connection()
     articles = []
+    total_pages = 1
+    
     if conn:
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("""
+            cursor.execute("SELECT COUNT(*) as count FROM articles")
+            total_articles = cursor.fetchone()['count']
+            total_pages = (total_articles + per_page - 1) // per_page
+
+            query = """
                 SELECT a.id, a.title, a.content_markdown, c.name as category_name 
                 FROM articles a 
                 LEFT JOIN categories c ON a.category_id = c.id 
-                ORDER BY a.id DESC LIMIT 10
-            """)
+                ORDER BY a.id DESC 
+                LIMIT %s OFFSET %s
+            """
+            cursor.execute(query, (per_page, offset))
             articles = cursor.fetchall()
         except Exception as e:
             print(f"Database error: {e}")
         finally:
             cursor.close()
             conn.close()
-    return render_template('index.html', articles=articles)
+            
+    return render_template('index.html', articles=articles, page=page, total_pages=total_pages)
 
 @app.route('/article/<int:article_id>')
 def article_detail(article_id):
@@ -66,7 +79,7 @@ def article_detail(article_id):
 def create_article():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
+    
     if request.method == 'POST':
         title = request.form.get('title')
         content_markdown = request.form.get('content_markdown')

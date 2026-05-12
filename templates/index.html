@@ -21,6 +21,18 @@
             </li>
         {% endfor %}
         </ul>
+
+        <div class="pagination" style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+            {% if page > 1 %}
+                <a href="{{ url_for('index', page=page-1) }}">&larr; Newer Articles</a>
+            {% endif %}
+            
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            
+            {% if page < total_pages %}
+                <a href="{{ url_for('index', page=page+1) }}">Older Articles &rarr;</a>
+            {% endif %}
+        </div>
     {% else %}
         <p><em>No articles found in the database.</em></p>
     {% endif %}
