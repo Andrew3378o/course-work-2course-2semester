@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Media Library - Thematic Wiki{% endblock %}
+
+{% block content %}
+    <h2>Media Library</h2>
+    
+    <form action="{{ url_for('media_library') }}" method="POST" enctype="multipart/form-data" style="margin-bottom: 2em; background: #f4f6f8; padding: 15px; border-radius: 5px; border: 1px solid #dce0e4;">
+        <div style="margin-bottom: 10px;">
+            <label for="file" style="font-weight: bold;">Upload New Image:</label><br>
+            <input type="file" id="file" name="file" required style="margin-top: 10px;">
+        </div>
+        <button type="submit">Upload</button>
+    </form>
+
+    <h3>Uploaded Files</h3>
+    {% if media_files %}
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for media in media_files %}
+            <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; width: 220px; text-align: center; background: #fff;">
+                <img src="{{ url_for('static', filename='uploads/' + media.filename) }}" alt="{{ media.filename }}" style="max-width: 100%; max-height: 150px; display: block; margin: 0 auto 10px; object-fit: contain;">
+                <p style="font-size: 0.85em; overflow-wrap: break-word; margin: 0 0 10px; color: #555;">{{ media.filename }}</p>
+                <input type="text" value="![{{ media.filename }}](/static/uploads/{{ media.filename }})" readonly style="width: 100%; font-size: 0.8em; padding: 5px; box-sizing: border-box; background: #fdfdfd; border: 1px solid #ccc; cursor: pointer;" onclick="this.select();">
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p>No media files uploaded yet.</p>
+    {% endif %}
+{% endblock %}

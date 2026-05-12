@@ -1,10 +1,12 @@
 import os
 import re
+import uuid
 from flask import Flask, render_template, abort, request, redirect, url_for, flash, session
 from dotenv import load_dotenv
 from db import get_db_connection
 import markdown2
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from functools import wraps
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -13,6 +15,13 @@ load_dotenv(env_path, override=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'default-secret-key')
+
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def login_required(f):
     @wraps(f)
@@ -356,7 +365,7 @@ def article_history(article_id):
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT id, title FROM articles WHERE id = %s", (article_id,))
-            article = article = cursor.fetchone()
+            article = cursor.fetchone()
             
             if article:
                 cursor.execute("""
@@ -503,6 +512,58 @@ def delete_category(id):
             cursor.close()
             conn.close()
     return redirect(url_for('manage_categories'))
+
+@app.route('/media', methods=['GET', 'POST'])
+@login_required
+def media_library():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'error')
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'error')
+            return redirect(request.url)
+            
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            
+            if not filename:
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                filename = f"image_{uuid.uuid4().hex[:8]}.{ext}"
+                
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            if conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("INSERT INTO media (filename) VALUES (%s)", (filename,))
+                    conn.commit()
+                    flash('File uploaded successfully!', 'success')
+                except Exception as e:
+                    flash(f'Insert Error: {str(e)}', 'error')
+                finally:
+                    cursor.close()
+            return redirect(url_for('media_library'))
+        else:
+            flash('Invalid file type.', 'error')
+            return redirect(url_for('media_library'))
+            
+    media_files = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM media ORDER BY id DESC")
+            media_files = cursor.fetchall()
+        except Exception as e:
+            flash(f'Select Error: {str(e)}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+            
+    return render_template('media.html', media_files=media_files)
 
 if __name__ == '__main__':
     app.run(debug=True)

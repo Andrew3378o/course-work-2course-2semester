@@ -12,6 +12,7 @@
             {% if session.get('user_id') %}
                 <a href="{{ url_for('create_article') }}">New Article</a>
                 <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
+                <a href="{{ url_for('media_library') }}">Media</a>
                 <a href="{{ url_for('logout') }}" style="color: #d9534f; float: right; margin-right: 0;">Logout ({{ session.get('username') }})</a>
             {% else %}
                 <a href="{{ url_for('login') }}">Login</a>
