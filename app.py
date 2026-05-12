@@ -447,7 +447,7 @@ def manage_categories():
                     cursor.execute("INSERT INTO categories (name) VALUES (%s)", (clean_name,))
                     conn.commit()
                     flash('Category added successfully!', 'success')
-                except Exception:
+                except Exception as e:
                     error = "Така категорія вже існує."
                 finally:
                     cursor.close()
@@ -564,6 +564,33 @@ def media_library():
             conn.close()
             
     return render_template('media.html', media_files=media_files)
+
+@app.route('/media/<int:media_id>/delete', methods=['POST'])
+@login_required
+def delete_media(media_id):
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT filename FROM media WHERE id = %s", (media_id,))
+            media = cursor.fetchone()
+            
+            if media:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], media['filename'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                
+                cursor.execute("DELETE FROM media WHERE id = %s", (media_id,))
+                conn.commit()
+                flash('Media file deleted.', 'info')
+            else:
+                flash('Media not found.', 'error')
+        except Exception as e:
+            flash(f'Delete Error: {str(e)}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    return redirect(url_for('media_library'))
 
 if __name__ == '__main__':
     app.run(debug=True)
