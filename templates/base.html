@@ -13,7 +13,10 @@
                 <a href="{{ url_for('create_article') }}">New Article</a>
                 <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
                 <a href="{{ url_for('media_library') }}">Media</a>
-                <a href="{{ url_for('logout') }}" style="color: #d9534f; float: right; margin-right: 0;">Logout ({{ session.get('username') }})</a>
+                {% if session.get('role') == 'Admin' %}
+                    <a href="{{ url_for('manage_users') }}">Manage Users</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" style="color: #d9534f; float: right; margin-right: 0;">Logout ({{ session.get('username') }} - {{ session.get('role') }})</a>
             {% else %}
                 <a href="{{ url_for('login') }}">Login</a>
                 <a href="{{ url_for('register') }}">Register</a>

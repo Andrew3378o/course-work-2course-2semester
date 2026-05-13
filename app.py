@@ -32,6 +32,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'Admin':
+            flash('Admin privileges required for this action.', 'error')
+            return redirect(request.referrer or url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -389,6 +398,7 @@ def article_history(article_id):
 
 @app.route('/article/<int:article_id>/delete', methods=['POST'])
 @login_required
+@admin_required
 def delete_article(article_id):
     conn = get_db_connection()
     if conn:
@@ -498,6 +508,7 @@ def edit_category(id):
 
 @app.route('/categories/<int:id>/delete', methods=['POST'])
 @login_required
+@admin_required
 def delete_category(id):
     conn = get_db_connection()
     if conn:
@@ -567,6 +578,7 @@ def media_library():
 
 @app.route('/media/<int:media_id>/delete', methods=['POST'])
 @login_required
+@admin_required
 def delete_media(media_id):
     conn = get_db_connection()
     if conn:
@@ -591,6 +603,82 @@ def delete_media(media_id):
             cursor.close()
             conn.close()
     return redirect(url_for('media_library'))
+
+@app.route('/users')
+@login_required
+@admin_required
+def manage_users():
+    conn = get_db_connection()
+    users = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+            users = cursor.fetchall()
+        except Exception as e:
+            flash('Database error.', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(user_id):
+    conn = get_db_connection()
+    if request.method == 'POST':
+        new_role = request.form.get('role')
+        if new_role in ['Guest', 'Editor', 'Admin']:
+            if conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("UPDATE users SET role = %s WHERE id = %s", (new_role, user_id))
+                    conn.commit()
+                    if session.get('user_id') == user_id:
+                        session['role'] = new_role
+                    flash('User role updated successfully!', 'success')
+                except Exception as e:
+                    flash('Error updating user.', 'error')
+                finally:
+                    cursor.close()
+                    conn.close()
+            return redirect(url_for('manage_users'))
+
+    user = None
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, role FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+    if not user:
+        abort(404)
+        
+    return render_template('edit_user.html', user=user)
+
+@app.route('/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    if user_id == session.get('user_id'):
+        flash('You cannot delete yourself.', 'error')
+        return redirect(url_for('manage_users'))
+
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            conn.commit()
+            flash('User deleted successfully.', 'info')
+        except Exception as e:
+            flash('Error deleting user.', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    return redirect(url_for('manage_users'))
 
 if __name__ == '__main__':
     app.run(debug=True)
