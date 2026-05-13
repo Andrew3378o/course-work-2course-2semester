@@ -23,6 +23,24 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def extract_first_image(text):
+    if not text:
+        return None
+    match = re.search(r'!\[.*?\]\((.*?)\)', text)
+    if match:
+        return match.group(1)
+    return None
+
+def generate_snippet(text, max_length=150):
+    if not text:
+        return ""
+    html = markdown2.markdown(text)
+    clean_text = re.sub(r'<[^>]+>', '', html)
+    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+    if len(clean_text) > max_length:
+        return clean_text[:max_length] + '...'
+    return clean_text
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -126,6 +144,9 @@ def index():
             """
             cursor.execute(query, (per_page, offset))
             articles = cursor.fetchall()
+            for a in articles:
+                a['snippet'] = generate_snippet(a['content_markdown'])
+                a['thumbnail'] = extract_first_image(a['content_markdown'])
         except Exception as e:
             pass
         finally:
@@ -396,6 +417,9 @@ def tag_articles(tag_name):
                 WHERE t.name = %s ORDER BY a.id DESC
             """, (tag_name,))
             articles = cursor.fetchall()
+            for a in articles:
+                a['snippet'] = generate_snippet(a['content_markdown'])
+                a['thumbnail'] = extract_first_image(a['content_markdown'])
         except Exception as e:
             pass
         finally:
@@ -422,6 +446,9 @@ def search():
                 ORDER BY a.id DESC
             """, (search_term, search_term, search_term))
             articles = cursor.fetchall()
+            for a in articles:
+                a['snippet'] = generate_snippet(a['content_markdown'])
+                a['thumbnail'] = extract_first_image(a['content_markdown'])
         except Exception as e:
             pass
         finally:

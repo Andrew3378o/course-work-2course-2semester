@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Thematic Wiki{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script>
-        if (localStorage.getItem('theme') === 'dark') { document.documentElement.classList.add('dark-theme'); }
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
-<body onload="if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-theme');">
+<body>
+    <script>
+        if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-theme'); }
+    </script>
+    
     <nav class="navbar">
         <div class="nav-container">
             <a href="{{ url_for('index') }}" class="nav-logo">Thematic Wiki</a>
@@ -33,7 +35,7 @@
 
             <ul class="nav-menu" id="nav-menu">
                 <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
-                <li class="nav-item"><a href="#" id="theme-toggle" class="nav-link" style="color: #0969da; font-weight: 600;">Toggle Theme</a></li>
+                <li class="nav-item"><a href="#" id="theme-toggle" class="nav-link" style="color: var(--primary-color); font-weight: 600;">Toggle Theme</a></li>
                 {% if session.get('user_id') %}
                     <li class="nav-item"><a href="{{ url_for('create_article') }}" class="nav-link">New Article</a></li>
                     <li class="nav-item"><a href="{{ url_for('manage_categories') }}" class="nav-link">Categories</a></li>
@@ -68,37 +70,5 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-
-    <script>
-        const hamburger = document.getElementById('hamburger');
-        const navMenu = document.getElementById('nav-menu');
-        const themeToggle = document.getElementById('theme-toggle');
-
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-
-        document.querySelectorAll('.nav-link').forEach(n => {
-            if(n.id !== 'theme-toggle') {
-                n.addEventListener('click', () => {
-                    hamburger.classList.remove('active');
-                    navMenu.classList.remove('active');
-                });
-            }
-        });
-
-        if (themeToggle) {
-            themeToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.body.classList.toggle('dark-theme');
-                if (document.body.classList.contains('dark-theme')) {
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    localStorage.setItem('theme', 'light');
-                }
-            });
-        }
-    </script>
 </body>
 </html>

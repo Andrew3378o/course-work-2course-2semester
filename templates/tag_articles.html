@@ -3,26 +3,37 @@
 {% block title %}Tag: {{ tag_name }} - Thematic Wiki{% endblock %}
 
 {% block content %}
-    <h2>Articles tagged with "{{ tag_name }}"</h2>
-    
-    {% if articles %}
-        <ul>
-        {% for article in articles %}
-            <li>
-                <h3>
-                    <a href="{{ url_for('article_detail', article_id=article.id) }}">
-                        {{ article.title }}
-                    </a>
-                </h3>
-                <p style="margin-top: -10px; margin-bottom: 5px;"><small>Category: {{ article.category_name or 'None' }}</small></p>
-                <p>{{ article.content_markdown[:100] }}...</p>
-                <hr>
-            </li>
-        {% endfor %}
-        </ul>
+<div style="margin-bottom: 30px;">
+    <h2 style="margin-bottom: 10px;">Tag Archive</h2>
+    <p style="color: var(--text-muted);">Articles tagged with: <span class="tag-badge" style="font-size: 1rem; padding: 6px 14px;">{{ tag_name }}</span></p>
+</div>
+
+<div class="articles-grid">
+    {% for article in articles %}
+    <div class="article-card">
+        {% if article.thumbnail %}
+            <a href="{{ url_for('article_detail', article_id=article.id) }}">
+                <img src="{{ article.thumbnail }}" class="article-card-image" alt="Article image">
+            </a>
+        {% endif %}
+        <h3><a href="{{ url_for('article_detail', article_id=article.id) }}">{{ article.title }}</a></h3>
+        <div class="article-card-meta">
+            {% if article.category_name %}
+                <span style="color: var(--primary-color); font-weight: 500;">{{ article.category_name }}</span>
+            {% endif %}
+        </div>
+        <div class="article-card-snippet">
+            {{ article.snippet }}
+        </div>
+        <div style="margin-top: auto; padding-top: 15px;">
+            <a href="{{ url_for('article_detail', article_id=article.id) }}" style="font-size: 0.9rem; font-weight: 600;">Explore &rarr;</a>
+        </div>
+    </div>
     {% else %}
-        <p><em>No articles found for this tag.</em></p>
-    {% endif %}
-    
-    <a href="{{ url_for('index') }}" style="text-decoration: none;">&larr; Back to home</a>
+    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px;">
+        <p style="color: var(--text-muted); font-size: 1.1rem;">No articles found with this tag.</p>
+        <a href="{{ url_for('index') }}" style="color: var(--primary-color); font-weight: 600; margin-top: 15px; display: inline-block;">Back to all articles</a>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

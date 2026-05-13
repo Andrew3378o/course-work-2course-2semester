@@ -3,55 +3,58 @@
 {% block title %}Home - Thematic Wiki{% endblock %}
 
 {% block content %}
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-        <h2 style="border: none; margin: 0; padding: 0;">Discover Articles</h2>
-        {% if session.get('user_id') %}
-            <a href="{{ url_for('create_article') }}" style="background-color: #2ea44f; color: white; padding: 6px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; text-decoration: none;">+ New Article</a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0;">Latest Articles</h2>
+    {% if session.get('user_id') %}
+        <a href="{{ url_for('create_article') }}" class="nav-link" style="background-color: var(--primary-color); color: white; border-radius: 6px; padding: 8px 16px;">+ New Article</a>
+    {% endif %}
+</div>
+
+<div class="articles-grid">
+    {% for article in articles %}
+    <div class="article-card">
+        {% if article.thumbnail %}
+            <a href="{{ url_for('article_detail', article_id=article.id) }}">
+                <img src="{{ article.thumbnail }}" class="article-card-image" alt="Article image">
+            </a>
         {% endif %}
-    </div>
-
-    {% if articles %}
-        <div class="articles-grid">
-            {% for article in articles %}
-                <div class="article-card">
-                    <h3><a href="{{ url_for('article_detail', article_id=article.id) }}">{{ article.title }}</a></h3>
-                    <div class="article-card-meta">
-                        Category: <strong>{{ article.category_name or 'Uncategorized' }}</strong>
-                    </div>
-                    <div class="article-card-snippet">
-                        {{ article.content_markdown | striptags | truncate(150) }}
-                    </div>
-                    <a href="{{ url_for('article_detail', article_id=article.id) }}" class="read-more">Read article &rarr;</a>
-                </div>
-            {% endfor %}
-        </div>
-
-        {% if total_pages > 1 %}
-            <div class="pagination">
-                {% if page > 1 %}
-                    <a href="{{ url_for('index', page=page-1) }}">&laquo; Prev</a>
-                {% endif %}
-                
-                {% for p in range(1, total_pages + 1) %}
-                    {% if p == page %}
-                        <span class="current">{{ p }}</span>
-                    {% else %}
-                        <a href="{{ url_for('index', page=p) }}">{{ p }}</a>
-                    {% endif %}
-                {% endfor %}
-
-                {% if page < total_pages %}
-                    <a href="{{ url_for('index', page=page+1) }}">Next &raquo;</a>
-                {% endif %}
-            </div>
-        {% endif %}
-    {% else %}
-        <div style="text-align: center; padding: 60px 20px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px;">
-            <h3 style="color: #586069; margin-bottom: 10px;">No articles found</h3>
-            <p style="margin-bottom: 20px;">The knowledge base is currently empty.</p>
-            {% if session.get('user_id') %}
-                <a href="{{ url_for('create_article') }}" style="background-color: var(--primary-color); color: white; padding: 8px 20px; border-radius: 6px; font-weight: 600; text-decoration: none;">Write the first article</a>
+        <h3><a href="{{ url_for('article_detail', article_id=article.id) }}">{{ article.title }}</a></h3>
+        <div class="article-card-meta">
+            {% if article.category_name %}
+                <span style="color: var(--primary-color); font-weight: 500;">{{ article.category_name }}</span>
             {% endif %}
         </div>
+        <div class="article-card-snippet">
+            {{ article.snippet }}
+        </div>
+        <div style="margin-top: auto; padding-top: 15px;">
+            <a href="{{ url_for('article_detail', article_id=article.id) }}" style="font-size: 0.9rem; font-weight: 600;">Read more &rarr;</a>
+        </div>
+    </div>
+    {% else %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px;">
+        <p style="color: var(--text-muted); font-size: 1.1rem;">No articles found yet. Start by creating the first one!</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+        <a href="{{ url_for('index', page=page-1) }}">&laquo; Previous</a>
     {% endif %}
+    
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+            <span class="current">{{ p }}</span>
+        {% else %}
+            <a href="{{ url_for('index', page=p) }}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+    
+    {% if page < total_pages %}
+        <a href="{{ url_for('index', page=page+1) }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}
