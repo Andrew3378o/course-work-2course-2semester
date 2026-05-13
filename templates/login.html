@@ -3,17 +3,19 @@
 {% block title %}Login - Thematic Wiki{% endblock %}
 
 {% block content %}
+<div class="auth-container">
     <h2>Login</h2>
-    <form action="{{ url_for('login') }}" method="POST" style="max-width: 300px;">
-        <div style="margin-bottom: 1em;">
-            <label for="username">Username:</label><br>
-            <input type="text" id="username" name="username" required style="width: 100%; padding: 5px;">
-        </div>
-        <div style="margin-bottom: 1em;">
-            <label for="password">Password:</label><br>
-            <input type="password" id="password" name="password" required style="width: 100%; padding: 5px;">
-        </div>
-        <button type="submit" style="padding: 5px 15px;">Login</button>
+    <form action="{{ url_for('login') }}" method="POST">
+        <label for="username" style="font-weight: 500; display: block; margin-bottom: 5px;">Username</label>
+        <input type="text" name="username" id="username" required>
+        
+        <label for="password" style="font-weight: 500; display: block; margin-bottom: 5px;">Password</label>
+        <input type="password" name="password" id="password" required>
+        
+        <button type="submit">Login</button>
     </form>
-    <p style="margin-top: 15px;">Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+    <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
+        Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+    </p>
+</div>
 {% endblock %}

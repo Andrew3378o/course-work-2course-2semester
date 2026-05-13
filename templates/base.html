@@ -7,34 +7,48 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <div class="nav-links">
-                <a href="{{ url_for('index') }}">Home</a>
-                {% if session.get('user_id') %}
-                    <a href="{{ url_for('create_article') }}">New Article</a>
-                    <a href="{{ url_for('manage_categories') }}">Categories</a>
-                    <a href="{{ url_for('media_library') }}">Media</a>
-                    {% if session.get('role') == 'Admin' %}
-                        <a href="{{ url_for('manage_users') }}">Users</a>
-                    {% endif %}
-                {% endif %}
-            </div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-logo">Thematic Wiki</a>
             
-            <div class="nav-search">
-                <form action="{{ url_for('search') }}" method="GET" style="margin: 0; display: flex; gap: 5px;">
-                    <input type="text" name="q" placeholder="Search wiki..." required style="margin: 0; padding: 6px 10px;">
-                    <button type="submit" style="padding: 6px 12px;">Go</button>
+            <div class="nav-search-container">
+                <form action="{{ url_for('search') }}" method="GET" class="search-form">
+                    <button type="submit" class="search-btn">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                    </button>
+                    <input type="text" name="q" placeholder="Пошук статей..." required class="search-input">
                 </form>
-                {% if session.get('user_id') %}
-                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout ({{ session.get('username') }})</a>
-                {% else %}
-                    <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('register') }}">Register</a>
-                {% endif %}
             </div>
-        </nav>
 
+            <button class="hamburger" id="hamburger" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
+                {% if session.get('user_id') %}
+                    <li class="nav-item"><a href="{{ url_for('create_article') }}" class="nav-link">New Article</a></li>
+                    <li class="nav-item"><a href="{{ url_for('manage_categories') }}" class="nav-link">Categories</a></li>
+                    <li class="nav-item"><a href="{{ url_for('media_library') }}" class="nav-link">Media</a></li>
+                    {% if session.get('role') == 'Admin' %}
+                        <li class="nav-item"><a href="{{ url_for('manage_users') }}" class="nav-link">Users</a></li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('logout') }}" class="nav-link logout-btn">Logout ({{ session.get('username') }})</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
+                    <li class="nav-item"><a href="{{ url_for('register') }}" class="nav-link">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
@@ -45,9 +59,24 @@
             {% endwith %}
         </div>
 
-        <main>
+        <main class="content-main">
             {% block content %}{% endblock %}
         </main>
     </div>
+
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('nav-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            navMenu.classList.remove('active');
+        }));
+    </script>
 </body>
 </html>
