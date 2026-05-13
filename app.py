@@ -456,6 +456,51 @@ def manage_categories():
     conn.close()
     return render_template('manage_categories.html', categories=categories, error=error)
 
+@app.route('/categories/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_category(id):
+    conn = get_db_connection()
+    if request.method == 'POST':
+        name = request.form.get('name')
+        if name and conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("UPDATE categories SET name = %s WHERE id = %s", (name, id))
+                conn.commit()
+            except Exception as e:
+                pass
+            finally:
+                cursor.close()
+        return redirect(url_for('manage_categories'))
+    
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM categories WHERE id = %s", (id,))
+        category = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if category:
+            return render_template('edit_category.html', category=category)
+    return redirect(url_for('manage_categories'))
+
+@app.route('/categories/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_category(id):
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("DELETE FROM categories WHERE id = %s", (id,))
+            conn.commit()
+        except Exception as e:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
+    return redirect(url_for('manage_categories'))
+
 @app.route('/media')
 @login_required
 def media_library():
@@ -566,6 +611,35 @@ def delete_user(user_id):
             cursor.close()
             conn.close()
     return redirect(url_for('manage_users'))
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        if new_password:
+            hashed_password = generate_password_hash(new_password)
+            if conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", (hashed_password, session['user_id']))
+                    conn.commit()
+                    flash('Password updated successfully.', 'success')
+                except Exception as e:
+                    flash('Error updating password.', 'error')
+                finally:
+                    cursor.close()
+    stats = {'edits': 0}
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT COUNT(*) as cnt FROM revisions WHERE author_id = %s", (session['user_id'],))
+        res = cursor.fetchone()
+        if res:
+            stats['edits'] = res['cnt']
+        cursor.close()
+        conn.close()
+    return render_template('profile.html', stats=stats)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Thematic Wiki{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 500px;">
+    <h2 style="margin-bottom: 25px; text-align: left;">My Profile</h2>
+    
+    <div style="margin-bottom: 30px; padding: 20px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px;">
+        <p style="margin: 0 0 12px 0;"><strong>Username:</strong> {{ session.get('username') }}</p>
+        <p style="margin: 0 0 12px 0;">
+            <strong>Role:</strong> 
+            <span class="tag-badge" style="margin-left: 5px;">{{ session.get('role') }}</span>
+        </p>
+        <p style="margin: 0;"><strong>Total Edits:</strong> {{ stats.edits }} revisions made</p>
+    </div>
+
+    <h3 style="margin-bottom: 15px;">Change Password</h3>
+    <form action="{{ url_for('profile') }}" method="POST">
+        <label style="font-weight: 500; display: block; margin-bottom: 5px;">New Password</label>
+        <input type="password" name="new_password" required placeholder="Enter new strong password...">
+        
+        <button type="submit" style="margin-top: 10px;">Update Password</button>
+    </form>
+</div>
+{% endblock %}

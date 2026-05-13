@@ -3,30 +3,38 @@
 {% block title %}Manage Categories - Thematic Wiki{% endblock %}
 
 {% block content %}
-    <h2>Manage Categories</h2>
-    
-    <form action="{{ url_for('manage_categories') }}" method="POST" style="margin-bottom: 2em;">
-        <input type="text" name="name" required placeholder="New Category Name">
-        <button type="submit">Add Category</button>
+<h2>Manage Categories</h2>
+
+<div style="background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+    <form action="{{ url_for('manage_categories') }}" method="POST" style="display: flex; gap: 15px; margin: 0;">
+        <input type="text" name="name" placeholder="New category name..." required style="margin: 0; flex-grow: 1;">
+        <button type="submit" style="margin: 0;">Add Category</button>
     </form>
-    
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    
-    <ul>
-    {% for cat in categories %}
-        <li style="margin-bottom: 10px;">
-            {{ cat.name }} 
-            <a href="{{ url_for('edit_category', id=cat.id) }}" style="margin-left: 10px;">Edit</a>
-            {% if session.get('role') == 'Admin' %}
-                <form action="{{ url_for('delete_category', id=cat.id) }}" method="POST" style="display:inline; margin-left: 5px;">
-                    <button type="submit" onclick="return confirm('Delete this category?');" style="color: red; background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0;">Delete</button>
-                </form>
-            {% endif %}
-        </li>
-    {% else %}
-        <li>No categories found.</li>
-    {% endfor %}
-    </ul>
+</div>
+
+<div style="overflow-x: auto;">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr>
+                <td>{{ cat.id }}</td>
+                <td style="font-weight: 500;">{{ cat.name }}</td>
+                <td>
+                    <a href="{{ url_for('edit_category', id=cat.id) }}" style="margin-right: 15px;">Edit</a>
+                    <form action="{{ url_for('delete_category', id=cat.id) }}" method="POST" style="display: inline; margin: 0;">
+                        <button type="submit" style="background: none; border: none; color: var(--danger-color); padding: 0; cursor: pointer; text-decoration: underline; font-weight: normal;">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
