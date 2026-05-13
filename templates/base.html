@@ -2,30 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Thematic Wiki{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <nav>
-            <a href="{{ url_for('index') }}">Home</a>
-            {% if session.get('user_id') %}
-                <a href="{{ url_for('create_article') }}">New Article</a>
-                <a href="{{ url_for('manage_categories') }}">Manage Categories</a>
-                <a href="{{ url_for('media_library') }}">Media</a>
-                {% if session.get('role') == 'Admin' %}
-                    <a href="{{ url_for('manage_users') }}">Manage Users</a>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}">Home</a>
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('create_article') }}">New Article</a>
+                    <a href="{{ url_for('manage_categories') }}">Categories</a>
+                    <a href="{{ url_for('media_library') }}">Media</a>
+                    {% if session.get('role') == 'Admin' %}
+                        <a href="{{ url_for('manage_users') }}">Users</a>
+                    {% endif %}
                 {% endif %}
-                <a href="{{ url_for('logout') }}" style="color: #d9534f; float: right; margin-right: 0;">Logout ({{ session.get('username') }} - {{ session.get('role') }})</a>
-            {% else %}
-                <a href="{{ url_for('login') }}">Login</a>
-                <a href="{{ url_for('register') }}">Register</a>
-            {% endif %}
-            <form action="{{ url_for('search') }}" method="GET">
-                <input type="text" name="q" placeholder="Search..." required>
-                <button type="submit">Go</button>
-            </form>
-            <div class="clear"></div>
+            </div>
+            
+            <div class="nav-search">
+                <form action="{{ url_for('search') }}" method="GET" style="margin: 0; display: flex; gap: 5px;">
+                    <input type="text" name="q" placeholder="Search wiki..." required style="margin: 0; padding: 6px 10px;">
+                    <button type="submit" style="padding: 6px 12px;">Go</button>
+                </form>
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout ({{ session.get('username') }})</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}">Register</a>
+                {% endif %}
+            </div>
         </nav>
 
         <div class="flash-messages">
