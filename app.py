@@ -124,25 +124,52 @@ def logout():
 @app.route('/')
 def index():
     page = request.args.get('page', 1, type=int)
+    category_filter = request.args.get('category', type=int)
     per_page = 6
     offset = (page - 1) * per_page
     conn = get_db_connection()
     articles = []
+    category_tree = []
     total_pages = 1
+    
     if conn:
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT COUNT(*) as count FROM articles")
+            cursor.execute("SELECT id, name, parent_id FROM categories ORDER BY name ASC")
+            all_cats = cursor.fetchall()
+            for cat in all_cats:
+                if cat['parent_id'] is None:
+                    cat['subcategories'] = [sub for sub in all_cats if sub['parent_id'] == cat['id']]
+                    category_tree.append(cat)
+                    
+            if category_filter:
+                cursor.execute("SELECT COUNT(*) as count FROM articles WHERE category_id = %s", (category_filter,))
+            else:
+                cursor.execute("SELECT COUNT(*) as count FROM articles")
+                
             total_articles = cursor.fetchone()['count']
             total_pages = (total_articles + per_page - 1) // per_page
-            query = """
-                SELECT a.id, a.title, a.content_markdown, c.name as category_name 
-                FROM articles a 
-                LEFT JOIN categories c ON a.category_id = c.id 
-                ORDER BY a.id DESC 
-                LIMIT %s OFFSET %s
-            """
-            cursor.execute(query, (per_page, offset))
+            
+            if category_filter:
+                query = """
+                    SELECT a.id, a.title, a.content_markdown, c.name as category_name 
+                    FROM articles a 
+                    LEFT JOIN categories c ON a.category_id = c.id 
+                    WHERE a.category_id = %s
+                    ORDER BY a.id DESC 
+                    LIMIT %s OFFSET %s
+                """
+                cursor.execute(query, (category_filter, per_page, offset))
+            else:
+                query = """
+                    SELECT a.id, a.title, a.content_markdown, c.name as category_name 
+                    FROM articles a 
+                    LEFT JOIN categories c ON a.category_id = c.id 
+                    ORDER BY a.id DESC 
+                    LIMIT %s OFFSET %s
+                """
+                cursor.execute(query, (per_page, offset))
+                
             articles = cursor.fetchall()
             for a in articles:
                 a['snippet'] = generate_snippet(a['content_markdown'])
@@ -152,7 +179,7 @@ def index():
         finally:
             cursor.close()
             conn.close()
-    return render_template('index.html', articles=articles, page=page, total_pages=total_pages)
+    return render_template('index.html', articles=articles, page=page, total_pages=total_pages, category_tree=category_tree, current_category=category_filter)
 
 @app.route('/article/<int:article_id>')
 def article_detail(article_id):
@@ -256,7 +283,7 @@ def create_article():
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM categories ORDER BY name ASC")
+    cursor.execute("SELECT id, name FROM categories ORDER BY name ASC")
     categories = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -312,7 +339,7 @@ def edit_article(article_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM articles WHERE id = %s", (article_id,))
     article = cursor.fetchone()
-    cursor.execute("SELECT * FROM categories ORDER BY name ASC")
+    cursor.execute("SELECT id, name FROM categories ORDER BY name ASC")
     categories = cursor.fetchall()
     cursor.execute("""
         SELECT t.name FROM tags t 
@@ -458,30 +485,46 @@ def search():
 
 @app.route('/categories', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def manage_categories():
     conn = get_db_connection()
     error = None
     if request.method == 'POST':
         name = request.form.get('name')
+        parent_id = request.form.get('parent_id')
+        parent_id = int(parent_id) if parent_id and parent_id.strip() else None
+        
         if name and name.strip():
-            clean_name = name.strip().capitalize()
+            clean_name = name.strip()
             if conn:
                 cursor = conn.cursor()
                 try:
-                    cursor.execute("INSERT INTO categories (name) VALUES (%s)", (clean_name,))
+                    cursor.execute("INSERT INTO categories (name, parent_id) VALUES (%s, %s)", (clean_name, parent_id))
                     conn.commit()
                     flash('Category added!', 'success')
                 except Exception as e:
                     error = "Category already exists."
                 finally:
                     cursor.close()
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM categories ORDER BY name ASC")
-    categories = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('manage_categories.html', categories=categories, error=error)
+                    
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT c1.id, c1.name, c2.name as parent_name 
+            FROM categories c1 
+            LEFT JOIN categories c2 ON c1.parent_id = c2.id 
+            ORDER BY c1.name ASC
+        """)
+        categories = cursor.fetchall()
+        cursor.execute("SELECT id, name FROM categories WHERE parent_id IS NULL ORDER BY name ASC")
+        parent_candidates = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    else:
+        categories = []
+        parent_candidates = []
+        
+    return render_template('manage_categories.html', categories=categories, parent_candidates=parent_candidates, error=error)
 
 @app.route('/categories/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -490,10 +533,15 @@ def edit_category(id):
     conn = get_db_connection()
     if request.method == 'POST':
         name = request.form.get('name')
+        parent_id = request.form.get('parent_id')
+        parent_id = int(parent_id) if parent_id and parent_id.strip() else None
+        
         if name and conn:
+            if parent_id == id:
+                parent_id = None
             cursor = conn.cursor()
             try:
-                cursor.execute("UPDATE categories SET name = %s WHERE id = %s", (name, id))
+                cursor.execute("UPDATE categories SET name = %s, parent_id = %s WHERE id = %s", (name, parent_id, id))
                 conn.commit()
             except Exception as e:
                 pass
@@ -505,10 +553,12 @@ def edit_category(id):
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM categories WHERE id = %s", (id,))
         category = cursor.fetchone()
+        cursor.execute("SELECT id, name FROM categories WHERE parent_id IS NULL AND id != %s ORDER BY name ASC", (id,))
+        parent_candidates = cursor.fetchall()
         cursor.close()
         conn.close()
         if category:
-            return render_template('edit_category.html', category=category)
+            return render_template('edit_category.html', category=category, parent_candidates=parent_candidates)
     return redirect(url_for('manage_categories'))
 
 @app.route('/categories/<int:id>/delete', methods=['POST'])
@@ -530,6 +580,7 @@ def delete_category(id):
 
 @app.route('/media')
 @login_required
+@admin_required
 def media_library():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)

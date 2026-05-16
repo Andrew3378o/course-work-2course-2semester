@@ -53,11 +53,13 @@
                 </li>
                 {% if session.get('user_id') %}
                     <li class="nav-item"><a href="{{ url_for('create_article') }}" class="nav-link">New Article</a></li>
-                    <li class="nav-item"><a href="{{ url_for('manage_categories') }}" class="nav-link">Categories</a></li>
-                    <li class="nav-item"><a href="{{ url_for('media_library') }}" class="nav-link">Media</a></li>
+                    
                     {% if session.get('role') == 'Admin' %}
-                        <li class="nav-item"><a href="{{ url_for('manage_users') }}" class="nav-link">Users</a></li>
+                        <li class="nav-item"><a href="{{ url_for('manage_categories') }}" class="nav-link">Manage Categories</a></li>
+                        <li class="nav-item"><a href="{{ url_for('media_library') }}" class="nav-link">Manage Media</a></li>
+                        <li class="nav-item"><a href="{{ url_for('manage_users') }}" class="nav-link">Manage Users</a></li>
                     {% endif %}
+                    
                     <li class="nav-item"><a href="{{ url_for('profile') }}" class="nav-link">My Profile</a></li>
                     <li class="nav-item">
                         <a href="{{ url_for('logout') }}" class="nav-link logout-btn">Logout ({{ session.get('username') }})</a>
@@ -80,6 +82,8 @@
               {% endif %}
             {% endwith %}
         </div>
+
+        {% block pre_content %}{% endblock %}
 
         <main class="content-main">
             {% block content %}{% endblock %}

@@ -56,3 +56,17 @@ CREATE TABLE media (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE SET NULL
 );
+
+INSERT INTO categories (id, name, parent_id) VALUES
+(1, 'Science & Nature', NULL),
+(2, 'Technology & Computing', NULL),
+(3, 'Arts & Culture', NULL),
+(4, 'History & Events', NULL),
+(5, 'Physics', 1),
+(6, 'Biology', 1),
+(7, 'Artificial Intelligence', 2),
+(8, 'Programming', 2),
+(9, 'Literature', 3),
+(10, 'Cinema', 3),
+(11, 'Ancient History', 4),
+(12, 'Modern History', 4);

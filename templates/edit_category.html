@@ -6,6 +6,15 @@
     <form action="{{ url_for('edit_category', id=category.id) }}" method="POST">
         <label class="form-label">Category Name</label>
         <input type="text" name="name" value="{{ category.name }}" required>
+        
+        <label class="form-label">Parent Category</label>
+        <select name="parent_id">
+            <option value="">-- No Parent (Main Category) --</option>
+            {% for p in parent_candidates %}
+                <option value="{{ p.id }}" {% if category.parent_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+
         <button type="submit" class="form-input-mt">Update Category</button>
         <a href="{{ url_for('manage_categories') }}" class="cancel-link-block">Cancel</a>
     </form>
