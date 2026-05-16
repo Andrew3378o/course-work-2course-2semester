@@ -1,49 +1,38 @@
 {% extends "base.html" %}
-
 {% block title %}{{ article.title }} - Thematic Wiki{% endblock %}
-
 {% block content %}
-    <article>
-        <h2>{{ article.title }}</h2>
-        
-        <p class="article-meta" style="margin-bottom: 10px;">Category: <strong>{{ article.category_name or 'None' }}</strong></p>
-        
-        {% if article.tags %}
-            <div style="margin-bottom: 25px; display: flex; gap: 8px; flex-wrap: wrap;">
-                {% for tag in article.tags %}
-                    <a href="{{ url_for('tag_articles', tag_name=tag) }}" class="tag-badge">{{ tag }}</a>
-                {% endfor %}
-            </div>
+<div class="article-header">
+    <h1 class="article-title-margin">{{ article.title }}</h1>
+    <div class="article-meta-info">
+        {% if article.category_name %}Category: <span class="text-primary-bold">{{ article.category_name }}</span> | {% endif %}
+        Article ID: {{ article.id }}
+    </div>
+</div>
+{% if article.toc %}
+<div class="toc-box">
+    <h4>Contents</h4>
+    {{ article.toc|safe }}
+</div>
+{% endif %}
+<div class="article-content">
+    {{ article.html_content|safe }}
+</div>
+{% if article.tags %}
+<div class="article-actions">
+    {% for tag in article.tags %}
+        <a href="{{ url_for('tag_articles', tag_name=tag) }}" class="tag-badge">{{ tag }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="article-actions">
+    {% if session.get('user_id') %}
+        <a href="{{ url_for('edit_article', article_id=article.id) }}" class="article-action-link">Edit Article</a>
+        <a href="{{ url_for('article_history', article_id=article.id) }}" class="article-action-link">View History</a>
+        {% if session.get('role') == 'Admin' %}
+            <form action="{{ url_for('delete_article', article_id=article.id) }}" method="POST" class="form-inline-action">
+                <button type="submit" class="btn-danger-text">Delete Article</button>
+            </form>
         {% endif %}
-        
-        {% if article.toc %}
-            <div class="toc-box">
-                <h4>Table of Contents</h4>
-                {{ article.toc | safe }}
-            </div>
-        {% endif %}
-
-        <div class="article-content">
-            {{ article.html_content | safe }}
-        </div>
-        
-        <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border-color);">
-        
-        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 1em;">
-            <a href="{{ url_for('index') }}">&larr; Back to home</a>
-            <span style="color: #e1e4e8;">|</span>
-            <a href="{{ url_for('article_history', article_id=article.id) }}">History</a>
-            
-            {% if session.get('user_id') %}
-                <span style="color: #e1e4e8;">|</span>
-                <a href="{{ url_for('edit_article', article_id=article.id) }}">Edit Article</a>
-                {% if session.get('role') == 'Admin' %}
-                    <span style="color: #e1e4e8;">|</span>
-                    <form action="{{ url_for('delete_article', article_id=article.id) }}" method="POST" style="margin: 0;">
-                        <button type="submit" onclick="return confirm('Are you sure you want to delete this article?');" style="background: none; border: none; color: var(--danger-color); padding: 0; font-weight: normal; text-decoration: underline;">Delete Article</button>
-                    </form>
-                {% endif %}
-            {% endif %}
-        </div>
-    </article>
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,59 +1,45 @@
 {% extends "base.html" %}
-
 {% block title %}New Article - Thematic Wiki{% endblock %}
-
 {% block content %}
 <h2>Create New Article</h2>
-
-<form action="{{ url_for('create_article') }}" method="POST" id="article-form">
-    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-        <div style="flex: 2; min-width: 250px;">
-            <label style="font-weight: 500; display: block; margin-bottom: 5px;">Title</label>
+<form action="{{ url_for('create_article') }}" method="POST">
+    <div class="form-row">
+        <div class="form-col-2">
+            <label class="form-label">Title</label>
             <input type="text" name="title" value="{{ prefill_title }}" required>
         </div>
-        <div style="flex: 1; min-width: 200px;">
-            <label style="font-weight: 500; display: block; margin-bottom: 5px;">Category</label>
+        <div class="form-col-1">
+            <label class="form-label">Category</label>
             <select name="category_id">
                 <option value="">No Category</option>
-                {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                {% endfor %}
+                {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
             </select>
         </div>
     </div>
-
     <div class="editor-toolbar">
-        <button type="button" class="tool-btn" onclick="insertLineStart('# ')">H1</button>
-        <button type="button" class="tool-btn" onclick="insertLineStart('## ')">H2</button>
-        <button type="button" class="tool-btn" onclick="insertLineStart('### ')">H3</button>
-        <button type="button" class="tool-btn" onclick="insertText('**', '**')">B</button>
-        <button type="button" class="tool-btn" onclick="insertText('*', '*')">I</button>
-        <button type="button" class="tool-btn" onclick="insertLineStart('- ')">List</button>
-        <button type="button" class="tool-btn" onclick="insertLineStart('1. ')">Num List</button>
-        <button type="button" class="tool-btn" onclick="insertText('[[', ']]')">Wiki</button>
-        <button type="button" class="tool-btn" onclick="insertText('[', '](url)')">Link</button>
-        <button type="button" class="tool-btn" onclick="document.getElementById('img-upload').click()">+ Image</button>
-        <input type="file" id="img-upload" style="display:none" onchange="uploadImage(this)">
+        <button type="button" class="tool-btn" data-action="h1">H1</button>
+        <button type="button" class="tool-btn" data-action="h2">H2</button>
+        <button type="button" class="tool-btn" data-action="h3">H3</button>
+        <button type="button" class="tool-btn" data-action="bold">B</button>
+        <button type="button" class="tool-btn" data-action="italic">I</button>
+        <button type="button" class="tool-btn" data-action="list">List</button>
+        <button type="button" class="tool-btn" data-action="numlist">Num List</button>
+        <button type="button" class="tool-btn" data-action="wiki">Wiki</button>
+        <button type="button" class="tool-btn" data-action="link">Link</button>
+        <button type="button" class="tool-btn" data-action="image">+ Image</button>
+        <input type="file" id="img-upload" class="d-none">
     </div>
-
     <div class="editor-layout">
-        <div class="editor-side">
-            <textarea name="content_markdown" id="editor" class="editor-textarea" required placeholder="Start writing..."></textarea>
-        </div>
-        <div class="preview-side">
-            <div class="preview-header">Live Preview</div>
-            <div id="preview" class="preview-content article-content"></div>
-        </div>
+        <div class="editor-side"><textarea name="content_markdown" id="editor" class="editor-textarea" required placeholder="Start writing..."></textarea></div>
+        <div class="preview-side"><div class="preview-header">Live Preview</div><div id="preview" class="preview-content article-content"></div></div>
     </div>
-
-    <div style="margin-top: 15px;">
-        <label style="font-weight: 500; display: block; margin-bottom: 5px;">Tags</label>
+    <div class="form-actions">
+        <label class="form-label">Tags</label>
         <input type="text" name="tags" placeholder="tag1, tag2...">
     </div>
-
-    <div style="margin-top: 20px;">
+    <div class="form-actions">
         <button type="submit">Publish Article</button>
-        <a href="{{ url_for('index') }}" style="margin-left: 15px; color: var(--text-muted); text-decoration: none;">Cancel</a>
+        <a href="{{ url_for('index') }}" class="cancel-link">Cancel</a>
     </div>
 </form>
 {% endblock %}

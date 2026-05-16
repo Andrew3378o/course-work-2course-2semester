@@ -1,26 +1,22 @@
 {% extends "base.html" %}
-
 {% block title %}Media Library - Thematic Wiki{% endblock %}
-
 {% block content %}
 <h2>Media Library</h2>
-
-<div style="background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-    <h4 style="margin-top: 0; margin-bottom: 15px;">Upload New Image:</h4>
-    <form action="{{ url_for('api_upload_image') }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 15px; align-items: center; margin: 0;">
-        <input type="file" name="file" required style="margin: 0; padding: 5px;">
-        <button type="submit" style="margin: 0;">Upload</button>
+<div class="manage-header-box">
+    <h4 class="manage-header-title">Upload New Image:</h4>
+    <form action="{{ url_for('api_upload_image') }}" method="POST" enctype="multipart/form-data" class="inline-flex-form">
+        <input type="file" name="file" required class="input-no-margin">
+        <button type="submit" class="btn-no-margin">Upload</button>
     </form>
 </div>
-
 <h3>Uploaded Files</h3>
 <div class="articles-grid">
     {% for media in media_files %}
-    <div class="article-card" style="align-items: center; text-align: center;">
-        <img src="{{ url_for('static', filename='uploads/' + media.filename) }}" style="max-width: 100%; max-height: 150px; border-radius: 6px; margin-bottom: 15px;">
-        <p style="font-size: 13px; color: var(--text-color); word-break: break-all; margin-bottom: 15px;">{{ media.filename }}</p>
-        <form action="{{ url_for('delete_media', media_id=media.id) }}" method="POST" style="width: 100%; margin: 0;">
-            <button type="submit" style="background: none; border: none; color: var(--danger-color); cursor: pointer; text-decoration: underline; width: 100%; padding: 0;">Delete File</button>
+    <div class="article-card media-card-wrapper">
+        <img src="{{ url_for('static', filename='uploads/' + media.filename) }}" class="media-card-img" alt="Media File">
+        <p class="media-card-title">{{ media.filename }}</p>
+        <form action="{{ url_for('delete_media', media_id=media.id) }}" method="POST" class="form-full-width">
+            <button type="submit" class="btn-danger-full">Delete File</button>
         </form>
     </div>
     {% endfor %}

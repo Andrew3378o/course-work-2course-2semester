@@ -1,15 +1,13 @@
 {% extends "base.html" %}
-
 {% block title %}Edit Category - Thematic Wiki{% endblock %}
-
 {% block content %}
 <div class="auth-container">
-    <h2>Edit Category</h2>
+    <h2 class="auth-title">Edit Category</h2>
     <form action="{{ url_for('edit_category', id=category.id) }}" method="POST">
-        <label style="font-weight: 500; display: block; margin-bottom: 5px;">Category Name</label>
+        <label class="form-label">Category Name</label>
         <input type="text" name="name" value="{{ category.name }}" required>
-        <button type="submit" style="margin-top: 10px;">Update Category</button>
-        <a href="{{ url_for('manage_categories') }}" style="display: block; text-align: center; margin-top: 15px; color: var(--text-muted);">Cancel</a>
+        <button type="submit" class="form-input-mt">Update Category</button>
+        <a href="{{ url_for('manage_categories') }}" class="cancel-link-block">Cancel</a>
     </form>
 </div>
 {% endblock %}
