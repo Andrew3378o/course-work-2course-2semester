@@ -62,11 +62,29 @@ INSERT INTO categories (id, name, parent_id) VALUES
 (2, 'Technology & Computing', NULL),
 (3, 'Arts & Culture', NULL),
 (4, 'History & Events', NULL),
+
 (5, 'Physics', 1),
 (6, 'Biology', 1),
-(7, 'Artificial Intelligence', 2),
-(8, 'Programming', 2),
-(9, 'Literature', 3),
-(10, 'Cinema', 3),
-(11, 'Ancient History', 4),
-(12, 'Modern History', 4);
+(7, 'Chemistry', 1),
+(8, 'Astronomy & Space', 1),
+(9, 'Earth Sciences', 1),
+(10, 'Mathematics', 1),
+
+(11, 'Programming', 2),
+(12, 'Artificial Intelligence', 2),
+(13, 'Cybersecurity', 2),
+(14, 'Hardware & Architecture', 2),
+(15, 'Web Development', 2),
+(16, 'Data Science', 2),
+
+(17, 'Literature', 3),
+(18, 'Cinema & Television', 3),
+(19, 'Music', 3),
+(20, 'Visual Arts', 3),
+(21, 'Philosophy', 3),
+
+(22, 'Ancient History', 4),
+(23, 'Medieval History', 4),
+(24, 'Modern History', 4),
+(25, 'Military History', 4),
+(26, 'Contemporary Events', 4);

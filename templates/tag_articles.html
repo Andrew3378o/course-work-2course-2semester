@@ -8,16 +8,11 @@
 <div class="articles-grid">
     {% for article in articles %}
     <div class="article-card">
-        {% if article.thumbnail %}
-            <a href="{{ url_for('article_detail', article_id=article.id) }}">
-                <img src="{{ article.thumbnail }}" class="article-card-image" alt="Article image">
-            </a>
-        {% endif %}
         <h3><a href="{{ url_for('article_detail', article_id=article.id) }}">{{ article.title }}</a></h3>
         <div class="article-card-meta">
             {% if article.category_name %}<span class="tag-badge">{{ article.category_name }}</span>{% endif %}
         </div>
-        <div class="article-card-snippet">{{ article.snippet }}</div>
+        <div class="article-card-preview">{{ article.preview_html | safe }}</div>
         <div class="card-readmore">
             <a href="{{ url_for('article_detail', article_id=article.id) }}">Explore &rarr;</a>
         </div>

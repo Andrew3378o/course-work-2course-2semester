@@ -12,8 +12,10 @@
         for(let k in d) document.documentElement.style.setProperty(k, d[k]);
     }
     if (savedWidth === 'wide') {
+        document.documentElement.classList.add('wide-layout');
         document.documentElement.style.setProperty('--container-width', '95%');
     } else {
+        document.documentElement.classList.remove('wide-layout');
         document.documentElement.style.setProperty('--container-width', '1200px');
     }
 })();
@@ -53,32 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.documentElement.style.setProperty(key, `rgb(${r}, ${g}, ${b})`);
             }
             if (progress < 1) window.requestAnimationFrame(step);
-        }
-        window.requestAnimationFrame(step);
-    }
-
-    function animateWidth(startW, endW, duration, isWide) {
-        let startTime = null;
-        function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            let progress = Math.min((timestamp - startTime) / duration, 1);
-            
-            // Згладжування (ease-out-cubic) для плавності
-            const ease = 1 - Math.pow(1 - progress, 3);
-            const current = lerp(startW, endW, ease);
-            
-            document.documentElement.style.setProperty('--container-width', `${current}px`);
-            
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            } else {
-                // Повертаємо відносні одиниці вкінці анімації для адаптивності
-                if (isWide) {
-                    document.documentElement.style.setProperty('--container-width', '95%');
-                } else {
-                    document.documentElement.style.setProperty('--container-width', '1200px');
-                }
-            }
         }
         window.requestAnimationFrame(step);
     }
@@ -312,17 +288,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const widthRadios = document.querySelectorAll('input[name="width"]');
     widthRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
-            const containerNode = document.querySelector('.container') || document.querySelector('.nav-container');
-            const currentW = containerNode ? containerNode.offsetWidth : document.documentElement.offsetWidth;
-            const screenW = document.documentElement.offsetWidth;
+            const container = document.querySelector('.container');
+            const navContainer = document.querySelector('.nav-container');
             
-            if (e.target.value === 'wide') {
-                localStorage.setItem('width', 'wide');
-                animateWidth(currentW, screenW * 0.95, 500, true);
-            } else {
-                localStorage.setItem('width', 'standard');
-                animateWidth(currentW, Math.min(1200, screenW), 500, false);
-            }
+            animateStyle(container, 'opacity', 1, 0, 200);
+            if (navContainer) animateStyle(navContainer, 'opacity', 1, 0, 200);
+            
+            setTimeout(() => {
+                if (e.target.value === 'wide') {
+                    localStorage.setItem('width', 'wide');
+                    document.documentElement.classList.add('wide-layout');
+                    document.documentElement.style.setProperty('--container-width', '95%');
+                } else {
+                    localStorage.setItem('width', 'standard');
+                    document.documentElement.classList.remove('wide-layout');
+                    document.documentElement.style.setProperty('--container-width', '1200px');
+                }
+                animateStyle(container, 'opacity', 0, 1, 250);
+                if (navContainer) animateStyle(navContainer, 'opacity', 0, 1, 250);
+            }, 200);
         });
     });
 

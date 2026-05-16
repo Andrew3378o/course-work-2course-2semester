@@ -23,23 +23,33 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def extract_first_image(text):
-    if not text:
-        return None
-    match = re.search(r'!\[.*?\]\((.*?)\)', text)
-    if match:
-        return match.group(1)
-    return None
-
-def generate_snippet(text, max_length=150):
+def process_wiki_links(text, for_editor=False):
     if not text:
         return ""
-    html = markdown2.markdown(text)
-    clean_text = re.sub(r'<[^>]+>', '', html)
-    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
-    if len(clean_text) > max_length:
-        return clean_text[:max_length] + '...'
-    return clean_text
+    def repl(match):
+        inner = match.group(1)
+        if not inner:
+            return '[[]]'
+        if '|' in inner:
+            target, display = inner.split('|', 1)
+        else:
+            target, display = inner, inner
+        if for_editor:
+            return f'<span style="color:var(--primary-color); border-bottom:1px dashed var(--primary-color);">{display}</span>'
+        return f'<a href="/wiki/{target}" class="wiki-link">{display}</a>'
+    return re.sub(r'\[\[(.*?)\]\]', repl, text)
+
+def generate_preview_html(text):
+    if not text:
+        return ""
+    processed = process_wiki_links(text, for_editor=False)
+    paragraphs = [p.strip() for p in processed.split('\n\n') if p.strip()]
+    if not paragraphs:
+        return ""
+    first_paragraph = paragraphs[0]
+    html = markdown2.markdown(first_paragraph, extras=['break-on-newline', 'cuddled-lists'])
+    html = re.sub(r'<img[^>]*>', '', html)
+    return html
 
 def login_required(f):
     @wraps(f)
@@ -125,7 +135,7 @@ def logout():
 def index():
     page = request.args.get('page', 1, type=int)
     category_filter = request.args.get('category', type=int)
-    per_page = 6
+    per_page = 12
     offset = (page - 1) * per_page
     conn = get_db_connection()
     articles = []
@@ -143,7 +153,12 @@ def index():
                     category_tree.append(cat)
                     
             if category_filter:
-                cursor.execute("SELECT COUNT(*) as count FROM articles WHERE category_id = %s", (category_filter,))
+                cursor.execute("SELECT id FROM categories WHERE parent_id = %s", (category_filter,))
+                sub_cats = cursor.fetchall()
+                cat_ids = [category_filter] + [c['id'] for c in sub_cats]
+                format_strings = ','.join(['%s'] * len(cat_ids))
+                
+                cursor.execute(f"SELECT COUNT(*) as count FROM articles WHERE category_id IN ({format_strings})", tuple(cat_ids))
             else:
                 cursor.execute("SELECT COUNT(*) as count FROM articles")
                 
@@ -151,15 +166,16 @@ def index():
             total_pages = (total_articles + per_page - 1) // per_page
             
             if category_filter:
-                query = """
+                query = f"""
                     SELECT a.id, a.title, a.content_markdown, c.name as category_name 
                     FROM articles a 
                     LEFT JOIN categories c ON a.category_id = c.id 
-                    WHERE a.category_id = %s
+                    WHERE a.category_id IN ({format_strings})
                     ORDER BY a.id DESC 
                     LIMIT %s OFFSET %s
                 """
-                cursor.execute(query, (category_filter, per_page, offset))
+                params = tuple(cat_ids) + (per_page, offset)
+                cursor.execute(query, params)
             else:
                 query = """
                     SELECT a.id, a.title, a.content_markdown, c.name as category_name 
@@ -172,8 +188,7 @@ def index():
                 
             articles = cursor.fetchall()
             for a in articles:
-                a['snippet'] = generate_snippet(a['content_markdown'])
-                a['thumbnail'] = extract_first_image(a['content_markdown'])
+                a['preview_html'] = generate_preview_html(a['content_markdown'])
         except Exception as e:
             pass
         finally:
@@ -211,8 +226,7 @@ def article_detail(article_id):
     if article is None:
         abort(404)
     raw_content = article['content_markdown']
-    wiki_link_pattern = r'\[\[(.*?)\]\]'
-    processed_content = re.sub(wiki_link_pattern, r'<a href="/wiki/\1" class="wiki-link">\1</a>', raw_content)
+    processed_content = process_wiki_links(raw_content, for_editor=False)
     md = markdown2.Markdown(extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks', 'toc'])
     html_result = md.convert(processed_content)
     article['html_content'] = html_result
@@ -401,8 +415,7 @@ def delete_article(article_id):
 @login_required
 def api_preview():
     content = request.json.get('content', '')
-    wiki_link_pattern = r'\[\[(.*?)\]\]'
-    processed_content = re.sub(wiki_link_pattern, r'<span style="color:var(--primary-color); border-bottom:1px dashed var(--primary-color);">\1</span>', content)
+    processed_content = process_wiki_links(content, for_editor=True)
     md = markdown2.Markdown(extras=['break-on-newline', 'cuddled-lists', 'tables', 'fenced-code-blocks'])
     html = md.convert(processed_content)
     return jsonify({"html": html})
@@ -445,8 +458,7 @@ def tag_articles(tag_name):
             """, (tag_name,))
             articles = cursor.fetchall()
             for a in articles:
-                a['snippet'] = generate_snippet(a['content_markdown'])
-                a['thumbnail'] = extract_first_image(a['content_markdown'])
+                a['preview_html'] = generate_preview_html(a['content_markdown'])
         except Exception as e:
             pass
         finally:
@@ -474,8 +486,7 @@ def search():
             """, (search_term, search_term, search_term))
             articles = cursor.fetchall()
             for a in articles:
-                a['snippet'] = generate_snippet(a['content_markdown'])
-                a['thumbnail'] = extract_first_image(a['content_markdown'])
+                a['preview_html'] = generate_preview_html(a['content_markdown'])
         except Exception as e:
             pass
         finally:
