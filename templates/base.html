@@ -73,7 +73,7 @@
         </div>
     </nav>
 
-    <div class="container {% if request.endpoint in ['login', 'register'] %}auth-page-container{% endif %}">
+    <div class="container {% if request.endpoint in ['login', 'register'] %}auth-page-container{% elif request.endpoint == 'profile' %}profile-page-container{% endif %}">
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}

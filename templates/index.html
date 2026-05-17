@@ -4,8 +4,11 @@
 {% block pre_content %}
 {% if category_tree %}
 <div class="categories-top-bar">
-    <h3 class="categories-title">Categories</h3>
-    <div class="categories-list">
+    <div class="categories-header-mobile">
+        <h3 class="categories-title">Categories</h3>
+        <button id="mobile-cat-toggle" class="mobile-cat-toggle">Show &#9662;</button>
+    </div>
+    <div class="categories-list" id="categories-list">
         <div class="category-item-wrapper">
             <a href="{{ url_for('index') }}" class="category-main-link {% if not current_category %}active-category{% endif %}">All Categories</a>
         </div>
