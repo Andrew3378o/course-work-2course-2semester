@@ -345,8 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.querySelector('.container');
             const navContainer = document.querySelector('.nav-container');
             
-            animateStyle(container, 'opacity', 1, 0, 200);
-            if (navContainer) animateStyle(navContainer, 'opacity', 1, 0, 200);
+            animateStyle(container, 'opacity', 1, 0, 250);
+            if (navContainer) animateStyle(navContainer, 'opacity', 1, 0, 250);
             
             setTimeout(() => {
                 if (e.target.value === 'wide') {
@@ -358,9 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.documentElement.classList.remove('wide-layout');
                     document.documentElement.style.setProperty('--container-width', '1200px');
                 }
-                animateStyle(container, 'opacity', 0, 1, 250);
-                if (navContainer) animateStyle(navContainer, 'opacity', 0, 1, 250);
-            }, 200);
+                animateStyle(container, 'opacity', 0, 1, 300);
+                if (navContainer) animateStyle(navContainer, 'opacity', 0, 1, 300);
+            }, 260);
         });
     });
 
