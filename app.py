@@ -96,7 +96,7 @@ def register():
                 finally:
                     cursor.close()
                     conn.close()
-    return render_template('register.html')
+    return render_template('auth.html', active_tab='register')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -123,7 +123,7 @@ def login():
                 finally:
                     cursor.close()
                     conn.close()
-    return render_template('login.html')
+    return render_template('auth.html', active_tab='login')
 
 @app.route('/logout')
 def logout():

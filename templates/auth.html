@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Authorization - Thematic Wiki{% endblock %}
+{% block content %}
+<div class="auth-box">
+    <div class="auth-tabs">
+        <button class="auth-tab {% if active_tab == 'login' %}active{% endif %}" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab {% if active_tab == 'register' %}active{% endif %}" onclick="switchTab('register')">Sign Up</button>
+    </div>
+    
+    <div id="login-form" class="auth-form-container {% if active_tab != 'login' %}d-none{% endif %}">
+        <h2 class="auth-title">Welcome Back</h2>
+        <form action="{{ url_for('login') }}" method="POST">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" required>
+            <label class="form-label">Password</label>
+            <input type="password" name="password" required>
+            <button type="submit" class="btn-full-width">Sign In</button>
+        </form>
+    </div>
+
+    <div id="register-form" class="auth-form-container {% if active_tab != 'register' %}d-none{% endif %}">
+        <h2 class="auth-title">Create an Account</h2>
+        <form action="{{ url_for('register') }}" method="POST">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" required>
+            <label class="form-label">Password</label>
+            <input type="password" name="password" required>
+            <button type="submit" class="btn-full-width">Sign Up</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function switchTab(tab) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const tabs = document.querySelectorAll('.auth-tab');
+    
+    tabs.forEach(btn => btn.classList.remove('active'));
+    
+    loginForm.style.opacity = '0';
+    registerForm.style.opacity = '0';
+    
+    setTimeout(() => {
+        loginForm.classList.add('d-none');
+        registerForm.classList.add('d-none');
+        
+        if (tab === 'login') {
+            tabs[0].classList.add('active');
+            loginForm.classList.remove('d-none');
+            setTimeout(() => loginForm.style.opacity = '1', 50);
+            window.history.replaceState({}, '', '/login');
+        } else {
+            tabs[1].classList.add('active');
+            registerForm.classList.remove('d-none');
+            setTimeout(() => registerForm.style.opacity = '1', 50);
+            window.history.replaceState({}, '', '/register');
+        }
+    }, 200);
+}
+</script>
+{% endblock %}

@@ -12,6 +12,7 @@
         <div class="nav-container">
             <a href="{{ url_for('index') }}" class="nav-logo">Thematic Wiki</a>
             
+            {% if request.endpoint not in ['login', 'register'] %}
             <div class="nav-search-container">
                 <form action="{{ url_for('search') }}" method="GET" class="search-form">
                     <button type="submit" class="search-btn">
@@ -28,6 +29,7 @@
                 <span></span>
                 <span></span>
             </button>
+            {% endif %}
 
             <ul class="nav-menu" id="nav-menu">
                 <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
@@ -65,14 +67,13 @@
                         <a href="{{ url_for('logout') }}" class="nav-link logout-btn">Logout ({{ session.get('username') }})</a>
                     </li>
                 {% else %}
-                    <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
-                    <li class="nav-item"><a href="{{ url_for('register') }}" class="nav-link">Register</a></li>
+                    <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Authorization</a></li>
                 {% endif %}
             </ul>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container {% if request.endpoint in ['login', 'register'] %}auth-page-container{% endif %}">
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}

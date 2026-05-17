@@ -32,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const href = this.getAttribute('href');
             const target = this.getAttribute('target');
             if (href && !href.startsWith('#') && !href.startsWith('javascript') && target !== '_blank' && this.hostname === window.location.hostname) {
+                if (this.classList.contains('category-main-link') && window.innerWidth <= 1000) {
+                    const wrapper = this.closest('.category-item-wrapper');
+                    const dropdown = wrapper ? wrapper.querySelector('.subcategories-dropdown') : null;
+                    if (dropdown && dropdown.style.display !== 'block') {
+                        return;
+                    }
+                }
                 e.preventDefault();
                 animateStyle(document.body, 'opacity', 1, 0, 250);
                 setTimeout(() => { window.location.href = href; }, 250);
@@ -158,21 +165,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryWrappers = document.querySelectorAll('.category-item-wrapper');
     categoryWrappers.forEach(wrapper => {
         const dropdown = wrapper.querySelector('.subcategories-dropdown');
+        const mainLink = wrapper.querySelector('.category-main-link');
+        
         if(dropdown) {
             wrapper.addEventListener('mouseenter', () => {
-                dropdown.style.display = 'block';
-                animateStyle(dropdown, 'opacity', 0, 1, 150);
-                animateStyle(dropdown, 'translateY', -5, 0, 150);
+                if (window.innerWidth > 1000) {
+                    dropdown.style.display = 'block';
+                    animateStyle(dropdown, 'opacity', 0, 1, 150);
+                    animateStyle(dropdown, 'translateY', -5, 0, 150);
+                }
             });
+            
             wrapper.addEventListener('mouseleave', () => {
-                animateStyle(dropdown, 'opacity', 1, 0, 150);
-                animateStyle(dropdown, 'translateY', 0, -5, 150);
-                setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+                if (window.innerWidth > 1000) {
+                    animateStyle(dropdown, 'opacity', 1, 0, 150);
+                    animateStyle(dropdown, 'translateY', 0, -5, 150);
+                    setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+                }
             });
+
+            if (mainLink) {
+                mainLink.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 1000) {
+                        if (dropdown.style.display !== 'block') {
+                            e.preventDefault();
+                            document.querySelectorAll('.subcategories-dropdown').forEach(d => {
+                                if (d !== dropdown) {
+                                    d.style.opacity = 0;
+                                    d.style.display = 'none';
+                                }
+                            });
+                            dropdown.style.display = 'block';
+                            animateStyle(dropdown, 'opacity', 0, 1, 150);
+                            animateStyle(dropdown, 'translateY', -5, 0, 150);
+                        }
+                    }
+                });
+            }
         }
     });
 
-    const buttons = document.querySelectorAll('button:not(.hamburger):not(.search-btn):not(.tool-btn):not(.btn-danger-text):not(.btn-danger-full), .btn-new-article');
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 1000) {
+            if (!e.target.closest('.category-item-wrapper')) {
+                document.querySelectorAll('.subcategories-dropdown').forEach(dropdown => {
+                    if (dropdown.style.display === 'block') {
+                        animateStyle(dropdown, 'opacity', 1, 0, 150);
+                        animateStyle(dropdown, 'translateY', 0, -5, 150);
+                        setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+                    }
+                });
+            }
+        }
+    });
+
+    const buttons = document.querySelectorAll('button:not(.hamburger):not(.search-btn):not(.tool-btn):not(.btn-danger-text):not(.btn-danger-full):not(.auth-tab), .btn-new-article');
     buttons.forEach(btn => {
         btn.addEventListener('mouseenter', () => { btn.style.backgroundColor = 'var(--primary-hover)'; });
         btn.addEventListener('mouseleave', () => { btn.style.backgroundColor = 'var(--primary-color)'; });
